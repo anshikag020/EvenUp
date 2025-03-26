@@ -1,5 +1,4 @@
 ## Users table
-1. user id
 2. username
 3. name
 4. email
