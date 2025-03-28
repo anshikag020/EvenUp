@@ -1,0 +1,9 @@
+HOW TO INSTALL GIN
+
+go mod init myproject
+
+
+go get -u github.com/gin-gonic/gin
+go get -u github.com/lib/pq
+
+

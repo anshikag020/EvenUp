@@ -36,6 +36,9 @@
 1. group id
 2. participant id
 
+
+
+either this:
 ## Transactions table   
 if a transaction is settled from any side then we add the transaction here
 1. transaction id
@@ -46,12 +49,12 @@ if a transaction is settled from any side then we add the transaction here
 6. sender_status : 0/1 (0: pending, 1: settled)
 7. receiver_status : 0/1 (0: pending, 1: settled)
 
+
 ## Balances table
 1. group id
 2. username 1
 3. username 2
 4. balance
-(ig we need this)
 
 
 ## Settled transactions table
