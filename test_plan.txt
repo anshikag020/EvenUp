@@ -1,0 +1,17 @@
+Unit testing:
+
+Input modules:
+
+1. GetUserCredentials
+2. GetExpenseData
+
+Transform modules:
+
+1. OptimizeSettlements
+2. GenerateSpendingAnalysis
+3. DeleteGroup
+
+Output modules:
+
+1. UpdateBalances
+2. DeleteGroupRecord

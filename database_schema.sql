@@ -4,7 +4,8 @@ CREATE TABLE users (
     username VARCHAR(255) UNIQUE PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    email_verified BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE groups (
@@ -12,9 +13,26 @@ CREATE TABLE groups (
     group_name VARCHAR(255) NOT NULL,
     -- group_type mapping: 0 = OTS, 1 = Grey Group, 2 = Normal Group, 3 = Private-Split
     group_type INT CHECK (group_type IN (0, 1, 2, 3)) NOT NULL,
-    invite_code VARCHAR(10) UNIQUE NOT NULL DEFAULT LEFT(encode(digest(gen_random_uuid()::TEXT, 'sha256'), 'base64'), 8),,
+    invite_code VARCHAR(10) UNIQUE,
     admin_username VARCHAR(255) REFERENCES users(username)
 );
+
+CREATE OR REPLACE FUNCTION generate_invite_code()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.group_type IN (0, 1, 2) THEN
+        NEW.invite_code := LEFT(encode(digest(gen_random_uuid()::TEXT, 'sha256'), 'base64'), 8);
+    ELSE
+        NEW.invite_code := NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_invite_code
+BEFORE INSERT ON groups
+FOR EACH ROW
+EXECUTE FUNCTION generate_invite_code();
 
 CREATE TABLE ots_group_participants (
     group_id UUID REFERENCES groups(group_id) ON DELETE CASCADE,
@@ -70,7 +88,8 @@ CREATE TABLE completed_transactions (
     group_id UUID REFERENCES groups(group_id) ON DELETE CASCADE,
     sender VARCHAR(255) REFERENCES users(username),
     receiver VARCHAR(255) REFERENCES users(username),
-    amount DECIMAL(10,2) NOT NULL
+    amount DECIMAL(10,2) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
