@@ -15,3 +15,23 @@ Output modules:
 
 1. UpdateBalances
 2. DeleteGroupRecord
+
+
+Integration testing:
+
+1. GetSignUpData -> CreateUserAccount (Input - Transform)
+2. AddExpense -> OptimizeSettlements (Transform - Transform)
+3. DeleteGroup -> DeleteGroupRecord (Transform - Output)
+4. InsertExpenseRecord -> SendEmailNotification (Output - Output)
+5. SettleUp -> StoreSettlementRecord (Transform - Output)
+
+System testing:
+
+1. SignUp
+2. Create DeleteGroup
+3. Exit from Group 
+4. Add Expense
+5. Settle Up
+6. View Expenditure Analysis 
+7. Join group
+8. Login
