@@ -1,9 +1,15 @@
-HOW TO INSTALL GIN
+## Main flow for starting the project
+```go mod tidy```  # to clean & fetch deps
+```go run main.go```
 
-go mod init myproject
+------------------ following are not required --------------------------------
 
+## Initialise the project
+```go mod init evenup```
 
-go get -u github.com/gin-gonic/gin
-go get -u github.com/lib/pq
+## HOW TO INSTALL GIN
+```go get -u github.com/gin-gonic/gin```
 
+## To install postgresql driver for Go, run the following command:
+```go get -u github.com/lib/pq```
 
