@@ -1,0 +1,17 @@
+package main
+
+import (
+	"log"
+	"net/http"					// for server
+	"github.com/gorilla/mux"	// router
+	"github.com/anshikag020/EvenUp/server/routes"					// routes folder
+	"github.com/anshikag020/EvenUp/server/config"					// config folder
+)
+
+func main(){
+	config.LoadConfig()			// load config
+	router := mux.NewRouter()	// create new router
+	routes.RegisterRoutes(router)	// register routes
+	log.Println("Starting server on port 8080")	// log message
+	log.Fatal(http.ListenAndServe(":8080", router))	// start server
+}
