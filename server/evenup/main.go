@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"					// for server
 	"github.com/gorilla/mux"	// router
-	"github.com/anshikag020/EvenUp/server/routes"					// routes folder
-	"github.com/anshikag020/EvenUp/server/config"					// config folder
+	"github.com/anshikag020/EvenUp/server/evenup/routes"					// routes folder
+	"github.com/anshikag020/EvenUp/server/evenup/config"					// config folder
 )
 
 func main(){
