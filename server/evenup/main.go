@@ -9,9 +9,9 @@ import (
 )
 
 func main(){
-	config.LoadConfig()			// load config
+	config.ConnectDB()			// load config
 	router := mux.NewRouter()	// create new router
-	routes.RegisterRoutes(router)	// register routes
+	routes.RegisterRoutes(router)	// register routes is a function in routes folder
 	log.Println("Starting server on port 8080")	// log message
-	log.Fatal(http.ListenAndServe(":8080", router))	// start server
+	log.Fatal(http.ListenAndServe(":8080", router))	// start server and keep listening for requests
 }
