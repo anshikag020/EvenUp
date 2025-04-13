@@ -5,7 +5,7 @@
 #### **User Registration**
 - **Method:** `POST`
 - **Route:** `/users/register`
-- **Parameters (JSON Body):**  
+- **Parameters (JSON Body):**
   - `username` (string) - Unique username
   - `name` (string)
   - `email` (string) - User email address
@@ -23,13 +23,13 @@
   - `password` (string)
 - **Description:** Authenticates the user credentials and returns a session token (JWT or session-based).
 - **Response:**
-  - Success: JSON with session token and user details.
+  - Success: JSON with cookie user details (name).
   - Failure: Error message indicating incorrect credentials.
 
 #### **Fetch User Profile**
 - **Method:** `GET`
 - **Route:** `/users/profile/:username`
-- **Description:** Retrieves the profile details of a user.
+- **Description:** Retrieves the profile details of a user. (name, email)
 - **Response:**
   - Success: JSON with user profile details.
   - Failure: Error message if user not found.
@@ -47,17 +47,19 @@
   - `admin username` (string)
 - **Description:** Creates a new group.
 - **Response:**
-  - Success: JSON with group details.
+  - Success: JSON with group id.
   - Failure: Error message if creation fails.
 
 #### **Fetch User Groups and private splits**
 - **Method:** `GET`
 - **Route:** `/groups/:username`
-- **Description:** Retrieves all groups for a user.
+- **Description:** Retrieves all groups and private splits for a user.
 - **Response:**
-  - Success: JSON with a list of groups.
+  - Success: JSON with a list of groups details (id and group name).
   - Failure: Error message if no groups found.
 
+
+// TODO: correct this route
 #### **Fetch Group Details**
 - **Method:** `GET`
 - **Route:** `/groups/details/:groupId`

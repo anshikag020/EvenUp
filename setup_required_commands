@@ -1,6 +1,7 @@
-## Main flow for starting the project
+## Starting the server
+**Note**: run these commands in server directory
 ```go mod tidy```  # to clean & fetch deps
-```go run main.go```
+```go run evenup/main.go```
 
 ------------------ following are not required --------------------------------
 

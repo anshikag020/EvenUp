@@ -8,6 +8,8 @@ CREATE TABLE users (
     email_verified BOOLEAN DEFAULT FALSE
 );
 
+
+// TODO: add description
 CREATE TABLE groups (
     group_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     group_name VARCHAR(255) NOT NULL,

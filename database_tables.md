@@ -4,12 +4,15 @@
 4. email
 5. password
 
+
+//TODO: add group description. Add in the SQL file too.
+// Remove the invite link expiry time.
 ## Groups table
 1. group id
 2. group name
-3. group type (OTS, Grey Group, normal group, private-split)
-4. Invite link (Unique invite code)
-5. Invite link expiry time
+3. group description
+4. group type (OTS, Grey Group, normal group, private-split)
+5. Unique invite code
 6. Admin\
 
 ## OTS groups participants
@@ -37,35 +40,6 @@
 2. participant id
 
 
-
-either this:
-## Transactions table   
-if a transaction is settled from any side then we add the transaction here
-1. transaction id
-2. sender id
-3. receiver id
-4. amount
-5. group id     (dont set as cascade)
-6. sender_status : 0/1 (0: pending, 1: settled)
-7. receiver_status : 0/1 (0: pending, 1: settled)
-
-
-## Balances table
-1. group id
-2. username 1
-3. username 2
-4. balance
-
-
-## Settled transactions table
-1. transaction id
-2. group id     (dont set as cascade)
-3. sender id
-4. receiver id
-5. amount
-
-
-else: *******
 ## Balances table
 1. group id
 2. sender
@@ -144,3 +118,34 @@ If the user settles up, then the transaction is removed from the balances table 
 
 ### Displaying the balances
 
+
+
+
+
+
+********************************************DISCARDED*************************
+
+## Transactions table   
+if a transaction is settled from any side then we add the transaction here
+1. transaction id
+2. sender id
+3. receiver id
+4. amount
+5. group id     (dont set as cascade)
+6. sender_status : 0/1 (0: pending, 1: settled)
+7. receiver_status : 0/1 (0: pending, 1: settled)
+
+
+## Balances table
+1. group id
+2. username 1
+3. username 2
+4. balance
+
+
+## Settled transactions table
+1. transaction id
+2. group id     (dont set as cascade)
+3. sender id
+4. receiver id
+5. amount
