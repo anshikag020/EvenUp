@@ -3,10 +3,15 @@
 3. name
 4. email
 5. password
+6. email_verified
 
 
 //TODO: add group description. Add in the SQL file too.
 // Remove the invite link expiry time.
+// Store `last_modified_by` for each expense.
+// Remove timestamp from the expenses table.
+// Add email verification status.
+
 ## Groups table
 1. group id
 2. group name
