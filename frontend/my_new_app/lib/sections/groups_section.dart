@@ -1,0 +1,128 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/utils/groups_utils.dart';
+
+class GroupsScreen extends StatefulWidget {
+  const GroupsScreen({super.key});
+
+  @override
+  State<GroupsScreen> createState() => _GroupsScreenState();
+}
+
+class _GroupsScreenState extends State<GroupsScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  final List<Map<String, dynamic>> allGroups = [
+    {"name": "Team Meet", "size": 10},
+    {"name": "Trial Group", "size": 7},
+    {"name": "Demo Group", "size": 5},
+    {"name": "Demo2", "size": 8},
+  ];
+
+  List<Map<String, dynamic>> filteredGroups = [];
+
+  @override
+  void initState() {
+    super.initState();
+    filteredGroups = List.from(allGroups);
+    _searchController.addListener(_filterGroups);
+  }
+
+  void _filterGroups() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredGroups = allGroups
+          .where((group) =>
+              group['name'].toString().toLowerCase().contains(query))
+          .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            Text(
+              "Groups",
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Search groups...',
+                  hintStyle: const TextStyle(color: Colors.white54),
+                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                  filled: true,
+                  fillColor: const Color(0xFF1E1E1E),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: filteredGroups.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No groups found.",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white54,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: filteredGroups.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index < filteredGroups.length) {
+                          final group = filteredGroups[index];
+                          return GroupTile(
+                            name: group['name'],
+                            size: group['size'],
+                          );
+                        } else {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 10, bottom: 20),
+                            child: Center(
+                              child: Text(
+                                "You don’t have any more groups.",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: Colors.white60,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
