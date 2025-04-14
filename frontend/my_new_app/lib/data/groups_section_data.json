@@ -1,0 +1,59 @@
+[
+    {
+      "name": "Team Meet",
+      "size": 10,
+      "description": "This is the Group 1, this is a demo group description.",
+      "inviteCode": "XXX123XXX12",
+      "groupType": "NORMAL"
+    },
+    {
+      "name": "Trial Group",
+      "size": 7,
+      "description": "This is the Group 2, this is a demo group description.",
+      "inviteCode": "XXX123XXX13",
+      "groupType": "OTS"
+    },
+    {
+      "name": "Demo Group",
+      "size": 5,
+      "description": "This is the Group 3, this is a demo group description.",
+      "inviteCode": "XXX123XXX14",
+      "groupType": "GREY"
+    },
+    {
+      "name": "Demo2",
+      "size": 8,
+      "description": "This is the Group 4, this is a demo group description.",
+      "inviteCode": "XXX123XXX15",
+      "groupType": "OTS"
+    },
+    {
+        "name": "Demo2",
+        "size": 8,
+        "description": "This is the Group 4, this is a demo group description.",
+        "inviteCode": "XXX123XXX15",
+        "groupType": "OTS"
+      },
+      {
+        "name": "Demo2",
+        "size": 8,
+        "description": "This is the Group 4, this is a demo group description.",
+        "inviteCode": "XXX123XXX15",
+        "groupType": "OTS"
+      },
+      {
+        "name": "Demo2",
+        "size": 8,
+        "description": "This is the Group 4, this is a demo group description.",
+        "inviteCode": "XXX123XXX15",
+        "groupType": "OTS"
+      },
+    {
+      "name": "Demo2",
+      "size": 8,
+      "description": "This is the Group 4, this is a demo group description.",
+      "inviteCode": "XXX123XXX15",
+      "groupType": "OTS"
+    }
+  ]
+  

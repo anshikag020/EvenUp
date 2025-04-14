@@ -1,40 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
+import 'package:my_new_app/models/transaction_history_model.dart';
+import 'package:my_new_app/services/service%20interfaces/transaction_history_service_interface.dart';
 import 'package:my_new_app/utils/transaction_tile.dart';
 
 class TransactionsHistoryScreen extends StatefulWidget {
   const TransactionsHistoryScreen({super.key});
 
   @override
-  State<TransactionsHistoryScreen> createState() =>
-      _TransactionsHistoryScreenState();
+  State<TransactionsHistoryScreen> createState() => _TransactionsHistoryScreenState();
 }
 
 class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final List<Map<String, String>> _allTransactions = [
-    {"name": "Anirudh", "amount": "500"},
-    {"name": "Yash", "amount": "700"},
-    {"name": "Anshika", "amount": "550"},
-    {"name": "Anirudh", "amount": "100"},
-  ];
 
-  List<Map<String, String>> _filteredTransactions = [];
+  late final TransactionService _transactionService;
+  List<TransactionModel> _allTransactions = [];
+  List<TransactionModel> _filteredTransactions = [];
 
   @override
   void initState() {
     super.initState();
-    _filteredTransactions = List.from(_allTransactions);
+    _transactionService = locator<TransactionService>();
+    _fetchTransactions();
     _searchController.addListener(_searchTransaction);
+  }
+
+  Future<void> _fetchTransactions() async {
+    final data = await _transactionService.fetchTransactions();
+    setState(() {
+      _allTransactions = data;
+      _filteredTransactions = data;
+    });
   }
 
   void _searchTransaction() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredTransactions =
-          _allTransactions.where((txn) {
-            return txn['name']!.toLowerCase().contains(query);
-          }).toList();
+      _filteredTransactions = _allTransactions
+          .where((txn) => txn.name.toLowerCase().contains(query))
+          .toList();
     });
   }
 
@@ -43,7 +49,6 @@ class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
     _searchController.dispose();
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -72,10 +77,7 @@ class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
                   prefixIcon: const Icon(Icons.search, color: Colors.white54),
                   filled: true,
                   fillColor: const Color(0xFF1E1E1E),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 0,
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none,
@@ -83,27 +85,25 @@ class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
             Expanded(
-              child:
-                  _filteredTransactions.isNotEmpty
-                      ? ListView.builder(
-                        itemCount: _filteredTransactions.length,
-                        itemBuilder: (_, index) {
-                          final txn = _filteredTransactions[index];
-                          return FancyTransactionTile(name: txn['name']!, amount: txn['amount']!);
-                        },
-                      )
-                      : Center(
-                        child: Text(
-                          "No transactions found",
-                          style: GoogleFonts.poppins(
-                            color: Colors.white54,
-                            fontSize: 14,
-                          ),
+              child: _filteredTransactions.isNotEmpty
+                  ? ListView.builder(
+                      itemCount: _filteredTransactions.length,
+                      itemBuilder: (_, index) {
+                        final txn = _filteredTransactions[index];
+                        return FancyTransactionTile(name: txn.name, amount: txn.amount);
+                      },
+                    )
+                  : Center(
+                      child: Text(
+                        "No transactions found",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white54,
+                          fontSize: 14,
                         ),
                       ),
+                    ),
             ),
           ],
         ),

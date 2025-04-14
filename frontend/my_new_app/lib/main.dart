@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:my_new_app/sections/main_page.dart'; 
+import 'package:my_new_app/sections/main_page.dart';
+import 'locator.dart';
 
 void main() {
+  setupLocator(useMock: true); // Flip to false when switching to live API
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

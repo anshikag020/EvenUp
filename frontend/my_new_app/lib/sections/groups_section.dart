@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
+import 'package:my_new_app/models/groups_section_model.dart';
+import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/utils/groups_utils.dart';
 
 class GroupsScreen extends StatefulWidget {
@@ -12,28 +15,31 @@ class GroupsScreen extends StatefulWidget {
 class _GroupsScreenState extends State<GroupsScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  final List<Map<String, dynamic>> allGroups = [
-    {"name": "Team Meet", "size": 10},
-    {"name": "Trial Group", "size": 7},
-    {"name": "Demo Group", "size": 5},
-    {"name": "Demo2", "size": 8},
-  ];
-
-  List<Map<String, dynamic>> filteredGroups = [];
+  late final GroupService _groupService;
+  List<GroupModel> allGroups = [];
+  List<GroupModel> filteredGroups = [];
 
   @override
   void initState() {
     super.initState();
-    filteredGroups = List.from(allGroups);
+    _groupService = locator<GroupService>();
+    _loadGroups();
     _searchController.addListener(_filterGroups);
+  }
+
+  Future<void> _loadGroups() async {
+    final groups = await _groupService.fetchGroups();
+    setState(() {
+      allGroups = groups;
+      filteredGroups = groups;
+    });
   }
 
   void _filterGroups() {
     final query = _searchController.text.toLowerCase();
     setState(() {
       filteredGroups = allGroups
-          .where((group) =>
-              group['name'].toString().toLowerCase().contains(query))
+          .where((group) => group.name.toLowerCase().contains(query))
           .toList();
     });
   }
@@ -100,8 +106,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         if (index < filteredGroups.length) {
                           final group = filteredGroups[index];
                           return GroupTile(
-                            name: group['name'],
-                            size: group['size'],
+                            name: group.name,
+                            size: group.size,
+                            description: group.description,
+                            inviteCode: group.inviteCode,
+                            groupType: group.groupType,
                           );
                         } else {
                           return Padding(
