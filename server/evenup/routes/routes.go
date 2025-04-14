@@ -7,9 +7,14 @@ import (
 )
 
 func RegisterRoutes(router *mux.Router) {
-	// User Routes
+	// Authentication Routes
 	router.HandleFunc("/api/signup", handlers.CreateUserAccount).Methods("POST")
-	router.HandleFunc("/users/login", handlers.LoginUser).Methods("POST")
-	router.HandleFunc("/users/profile/{username}", handlers.GetUserProfile).Methods("GET")
+	router.HandleFunc("/api/login", handlers.LoginUser).Methods("POST")
+	router.HandleFunc("/api/logout", handlers.LogoutUser).Methods("POST")
+	router.HandleFunc("/api/reset_password", handlers.ResetPassword).Methods("POST")
+
+	// Home action Routes
+	router.HandleFunc("/api/get_user_details", handlers.GetUserDetails).Methods("GET")
+	router.HandleFunc("/api/create_group", handlers.CreateGroup).Methods("PUT")	
 
 }
