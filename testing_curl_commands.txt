@@ -113,6 +113,9 @@ curl -X GET http://localhost:8080/api/get_groups \
 
 10. Get group details
 
-curl -X GET http://localhost:8080/api/get_group_details \
-     -H "Content-Type: application/json" \
-     -d '{"group_id": "2ac7392b-0f69-4c6e-8b5f-5ddb4d184f57"}'
+ curl -X GET "http://localhost:8080/api/get_group_details?group_id=2ac7392b-0f69-4c6e-8b5f-5ddb4d184f57"
+
+
+11. Get members of a group
+
+curl -X GET "http://localhost:8080/api/get_members?group_id=2ac7392b-0f69-4c6e-8b5f-5ddb4d184f57"

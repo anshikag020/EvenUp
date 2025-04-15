@@ -259,7 +259,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 12. GET GROUP DETAILS
+### 12. GET GROUP DETAILS   (done)    Note: the group id has not been sent in the request body
 **Route**: ```/api/get_group_details```\
 **METHOD**: ```GET```\
 **Description**: Used for getting group details.\
@@ -282,7 +282,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 13. GET MEMBERS OF A GROUP
+### 13. GET MEMBERS OF A GROUP    (done)     Note: the group id has not been sent in the request body
 **Route**: ```/api/get_members```\
 **METHOD**: ```GET```\
 **Description**: Used for getting members of a group.\
@@ -304,6 +304,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
+//Note: If the user exiting is an admin, should we send the list of members in the group here?
 ### 14. EXIT GROUP
 **Route**: ```/api/exit_group```\
 **METHOD**: ```DELETE```\

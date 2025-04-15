@@ -23,5 +23,6 @@ func RegisterRoutes(router *mux.Router) {
 	// groups page actions
 	router.HandleFunc("/api/get_groups", handlers.GetGroups).Methods("GET")
 	router.HandleFunc("/api/get_group_details", handlers.GetGroupDetails).Methods("GET")
+	router.HandleFunc("/api/get_members", handlers.GetMembers).Methods("GET")
 
 }

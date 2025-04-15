@@ -12,7 +12,7 @@ CREATE TABLE users (
 CREATE TABLE groups (
     group_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     group_name VARCHAR(255) NOT NULL,
-    group_description varchar(255),
+    group_description varchar(255) NOT NULL,
     -- group_type mapping: 0 = OTS, 1 = Grey Group, 2 = Normal Group, 3 = Private-Split
     group_type INT CHECK (group_type IN (0, 1, 2, 3)) NOT NULL,
     invite_code VARCHAR(10) UNIQUE,
