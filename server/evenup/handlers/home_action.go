@@ -3,6 +3,7 @@ package handlers
 import(
 	"encoding/json"
 	"net/http"
+	"fmt"
 	//"log"
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	//"golang.org/x/crypto/bcrypt"
@@ -114,4 +115,268 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		"message": "Group created successfully",
 	})
 }
+func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
+	// Parse request body
+	var req struct {
+		Username         string `json:"username"`
+		Username2        string `json:"username_2"`
+		GroupDescription string `json:"group_description"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
 
+	// Check if both usernames are the same
+	if req.Username == req.Username2 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "Cannot create private-split with yourself",
+		})
+		return
+	}
+
+	// Start transaction
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback() // rollback on any failure
+
+	var exists int
+
+	// Check if both users exist
+	for _, user := range []string{req.Username, req.Username2} {
+		err = tx.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", user).Scan(&exists)
+		if err != nil || exists == 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"status":  false,
+				"message": fmt.Sprintf("User not found: %s", user),
+			})
+			return
+		}
+	}
+
+	// Create group name
+	groupName := fmt.Sprintf("%s-%s", req.Username, req.Username2)
+
+	// Insert into groups table
+	var groupID uuid.UUID
+	err = tx.QueryRow(`
+		INSERT INTO groups (group_name, group_description, group_type, admin_username)
+		VALUES ($1, $2, 3, $3) RETURNING group_id
+	`, groupName, req.GroupDescription, req.Username).Scan(&groupID)
+	if err != nil {
+		http.Error(w, "Failed to create group", http.StatusInternalServerError)
+		return
+	}
+
+	// Insert participants
+	for _, participant := range []string{req.Username, req.Username2} {
+		_, err = tx.Exec(`
+			INSERT INTO group_participants (group_id, participant)
+			VALUES ($1, $2)
+		`, groupID, participant)
+		if err != nil {
+			http.Error(w, "Failed to add participants", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Commit transaction
+	if err = tx.Commit(); err != nil {
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		return
+	}
+
+	// Send success response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "Private-Split created successfully",
+	})
+}
+
+
+func JoinGroup(w http.ResponseWriter, r *http.Request) {
+	// Parse request body
+	var req struct {
+		Username   string `json:"username"`
+		InviteCode string `json:"invite_code"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Start transaction
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	var groupID uuid.UUID
+	var groupType int
+
+	// Check if invite code exists and get group info
+	err = tx.QueryRow(`
+		SELECT group_id, group_type FROM groups WHERE invite_code = $1
+	`, req.InviteCode).Scan(&groupID, &groupType)
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "Invalid invite code",
+		})
+		return
+	}
+
+	// Disallow joining private-split groups
+	if groupType == 3 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "Cannot join Private-Split group",
+		})
+		return
+	}
+
+	// Check if user is already a participant in group_participants
+	var exists int
+	err = tx.QueryRow(`
+		SELECT COUNT(*) FROM group_participants WHERE group_id = $1 AND participant = $2
+	`, groupID, req.Username).Scan(&exists)
+	if err != nil {
+		http.Error(w, "Failed to check existing membership", http.StatusInternalServerError)
+		return
+	}
+	if exists > 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "User already part of the group",
+		})
+		return
+	}
+
+	// Add to group_participants
+	_, err = tx.Exec(`
+		INSERT INTO group_participants (group_id, participant)
+		VALUES ($1, $2)
+	`, groupID, req.Username)
+	if err != nil {
+		http.Error(w, "Failed to add to group_participants", http.StatusInternalServerError)
+		return
+	}
+
+	// If OTS group, add to ots_group_participants
+	if groupType == 0 {
+		_, err = tx.Exec(`
+			INSERT INTO ots_group_participants (group_id, user_name)
+			VALUES ($1, $2)
+		`, groupID, req.Username)
+		if err != nil {
+			http.Error(w, "Failed to add to ots_group_participants", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Commit transaction
+	if err = tx.Commit(); err != nil {
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		return
+	}
+
+	// Success response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "Group joined successfully",
+	})
+}
+
+
+func GetTransactionHistory(w http.ResponseWriter, r *http.Request) {
+    // Parse request body
+    var req struct {
+        Username string `json:"username"`
+    }
+    err := json.NewDecoder(r.Body).Decode(&req)
+    if err != nil {
+        http.Error(w, "Invalid request body", http.StatusBadRequest)
+        return
+    }
+
+    // Query the transaction history for the user
+    rows, err := config.DB.Query(`
+        SELECT 
+            transaction_id, 
+            CASE 
+                WHEN sender = $1 THEN receiver 
+                WHEN receiver = $1 THEN sender
+            END AS other_user,
+            CASE 
+                WHEN sender = $1 THEN TRUE 
+                WHEN receiver = $1 THEN FALSE
+            END AS is_sender,
+            amount,
+            timestamp
+        FROM completed_transactions
+        WHERE sender = $1 OR receiver = $1;
+    `, req.Username)
+    if err != nil {
+        http.Error(w, "Failed to fetch transaction history", http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close()
+
+    // Prepare the transactions slice
+    var transactions []map[string]interface{}
+    
+    for rows.Next() {
+        var transactionID uuid.UUID
+        var otherUser string
+        var isSender bool
+        var amount float64
+        var timestamp string // Add a timestamp field to capture the transaction timestamp
+
+        err := rows.Scan(&transactionID, &otherUser, &isSender, &amount, &timestamp)
+        if err != nil {
+            http.Error(w, "Failed to scan transaction", http.StatusInternalServerError)
+            return
+        }
+
+        transactions = append(transactions, map[string]interface{}{
+            "transaction_id": transactionID.String(),
+            "other_user":     otherUser,
+            "is_sender":      isSender,
+            "amount":         amount,
+            "timestamp":      timestamp, // Include the timestamp in the response
+        })
+    }
+
+    if err = rows.Err(); err != nil {
+        http.Error(w, "Error occurred while fetching rows", http.StatusInternalServerError)
+        return
+    }
+
+    // Send the response
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "status":      true,
+        "transactions": transactions,
+    })
+}

@@ -15,6 +15,13 @@ func RegisterRoutes(router *mux.Router) {
 
 	// Home action Routes
 	router.HandleFunc("/api/get_user_details", handlers.GetUserDetails).Methods("GET")
-	router.HandleFunc("/api/create_group", handlers.CreateGroup).Methods("PUT")	
+	router.HandleFunc("/api/create_group", handlers.CreateGroup).Methods("PUT")
+	router.HandleFunc("/api/create_private_split", handlers.CreatePrivateSplit).Methods("PUT")
+	router.HandleFunc("/api/join_group", handlers.JoinGroup).Methods("PUT")
+	router.HandleFunc("/api/get_transaction_history", handlers.GetTransactionHistory).Methods("GET")
+	
+	// groups page actions
+	router.HandleFunc("/api/get_groups", handlers.GetGroups).Methods("GET")
+	router.HandleFunc("/api/get_group_details", handlers.GetGroupDetails).Methods("GET")
 
 }
