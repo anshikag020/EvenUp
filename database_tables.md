@@ -6,11 +6,10 @@
 6. email_verified
 
 
-//TODO: add group description. Add in the SQL file too.
-// Remove the invite link expiry time.
 // Store `last_modified_by` for each expense.
 // Remove timestamp from the expenses table.
 // Add email verification status.
+// Private splits must not have an invite code
 
 ## Groups table
 1. group id
@@ -98,7 +97,8 @@ In case of Grey group, first check if the current user is involved in the expens
 9. An invite link will be generated. The link will have an expiry. The user can join the group using the link. We add the user to the group participants table.
 
 ### Exit group
-10. Remove the row from group participants table.
+10. Remove the row from group participants table. If the member is admin, then he/she has to choose another username as the admin. For this we will give a list of usernames in the group.\
+If the user is the last member of the group, then we will delete the group from the groups table and also delete the group from the group participants table. We will have to remove all other related data also. No need to pass on the admin duty to anyone else.\
 
 ### Display logs (transaction history)
 11. Show  completely settled transactions. refer completed transactions table.\

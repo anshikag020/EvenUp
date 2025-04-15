@@ -1,6 +1,6 @@
 ## Authentication
 
-### 1. SIGNUP
+### 1. SIGNUP (done)
  **Route**: ```/api/signup```\
 **METHOD**: ```POST```\
 **Description**: Used for signup. Basic format checking must be done on client side.\
@@ -20,7 +20,7 @@
   "message": "string"       // like: "User created successfully", "Username already used"
 }
 ```
-### 2. LOGIN
+### 2. LOGIN  (done)
 **Route**: ```/api/login```\
 **METHOD**: ```POST```\
 **Description**: Used for login. Basic format checking must be done on client side.\
@@ -56,7 +56,7 @@ We can use this to store the session values in the cookie (backend).
 
 
 
-### 3. LOGOUT
+### 3. LOGOUT  (done)
 **Route**: ```/api/logout```\
 **METHOD**: ```POST```\
 **Description**: Used for logout.\
@@ -103,7 +103,7 @@ We can use this to store the session values in the cookie (backend).
 
 ## Home Page
 
-### 5. RESET PASSWORD
+### 5. RESET PASSWORD   (done)
 **Route**: ```/api/reset_password```\
 **METHOD**: ```POST```\
 **Description**: Used for reset password. Basic format checking must be done on client side.\
@@ -124,7 +124,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 6. GET USER DETAILS
+### 6. GET USER DETAILS   (done)
 **Route**: ```/api/get_user_details```\
 **METHOD**: ```GET```\
 **Description**: Used for getting user details.\
@@ -144,7 +144,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 7. CREATE GROUP
+### 7. CREATE GROUP     (done)
 **Route**: ```/api/create_group```\
 **METHOD**: ```PUT```\
 **Description**: Used for creating a group. Basic format checking must be done on client side.\
@@ -154,7 +154,7 @@ We can use this to store the session values in the cookie (backend).
   "username": "string",
   "group_name": "string",
   "group_description": "string",
-  "group_type": "string", // like: "OTS", "Grey Group", "Normal Group", "Private-Split",
+  "group_type": "string", // like: "OTS", "Grey Group", "Normal Group"
   "cookie"
 }
 ```
@@ -166,7 +166,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 8. CREATE PRIVATE SPLIT
+### 8. CREATE PRIVATE SPLIT    (done)
 **Route**: ```/api/create_private_split```\
 **METHOD**: ```PUT```\
 **Description**: Used for creating a private split. Basic format checking must be done on client side.\
@@ -183,11 +183,11 @@ We can use this to store the session values in the cookie (backend).
 ```json
 {  
   "status": "bool",         // like: true: Success, false: Failure
-  "message": "string"       // like: "Private-Split created successfully", "User not found"
+  "message": "string"       // like: "Private-Split created successfully", "User not found", "Cannot create private-split with yourself"
 }
 ```
 
-### 9. JOIN GROUP
+### 9. JOIN GROUP      (done)
 **Route**: ```/api/join_group```\
 **METHOD**: ```PUT```\
 **Description**: Used for joining a group. Basic format checking must be done on client side.\
@@ -206,10 +206,10 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 10. GET TRANSACTION HISTORY
+### 10. GET TRANSACTION HISTORY   (done)
 **Route**: ```/api/get_transaction_history```\
 **METHOD**: ```GET```\
-**Description**: Used for getting transaction history. Basic format checking must be done on client side.\
+**Description**: Used for getting transaction history.\
 **Request body**:
 ```json
 {  
@@ -222,21 +222,24 @@ We can use this to store the session values in the cookie (backend).
 {  
   "status": "bool",         // like: true: Success, false: Failure
   "transactions": [
-    "sender"  : "string",
-    "receiver": "string",
+    "transaction_id" : "string",
+    "other_user"  : "string",
+    "is_sender": "bool",    // true: if the other user is sender, false: if the other user is receiver
     "amount"  : "float"
   ]
 }
 ```
 
 ### VIEW GROUP ANALYSIS
+//TODO: 
+
 
 ## Groups Page
 
-### 11. GET GROUPS
+### 11. GET GROUPS        (done)
 **Route**: ```/api/get_groups```\
 **METHOD**: ```GET```\
-**Description**: Used for getting groups. Basic format checking must be done on client side.\
+**Description**: Used for getting groups.\
 **Request body**:
 ```json
 {  

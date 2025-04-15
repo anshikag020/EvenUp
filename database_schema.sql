@@ -9,10 +9,10 @@ CREATE TABLE users (
 );
 
 
-// TODO: add description
 CREATE TABLE groups (
     group_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     group_name VARCHAR(255) NOT NULL,
+    group_description varchar(255),
     -- group_type mapping: 0 = OTS, 1 = Grey Group, 2 = Normal Group, 3 = Private-Split
     group_type INT CHECK (group_type IN (0, 1, 2, 3)) NOT NULL,
     invite_code VARCHAR(10) UNIQUE,
@@ -91,8 +91,30 @@ CREATE TABLE completed_transactions (
     sender VARCHAR(255) REFERENCES users(username),
     receiver VARCHAR(255) REFERENCES users(username),
     amount DECIMAL(10,2) NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP   
 );
+
+
+// used to check if there is anyone in the group. If there is no one, delete the group
+
+CREATE OR REPLACE FUNCTION delete_empty_group()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if there are no participants in the group
+    IF NOT EXISTS (SELECT 1 FROM group_participants WHERE group_id = OLD.group_id) THEN
+        -- Delete the group if no participants exist
+        DELETE FROM groups WHERE group_id = OLD.group_id;
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create the trigger to call the function after deleting a participant
+CREATE TRIGGER check_empty_group
+AFTER DELETE ON group_participants
+FOR EACH ROW
+EXECUTE FUNCTION delete_empty_group();
+
 
 
 

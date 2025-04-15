@@ -14,3 +14,7 @@
 ## To install postgresql driver for Go, run the following command:
 ```go get -u github.com/lib/pq```
 
+```go get golang.org/x/crypto/bcrypt```
+
+```go get github.com/google/uuid```
+

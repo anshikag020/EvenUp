@@ -1,0 +1,118 @@
+1. signup
+
+curl -X POST http://localhost:8080/api/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john_doe",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "securePassword123"
+}'
+
+curl -X POST http://localhost:8080/api/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "anshikag020",
+    "name": "Anshika Gupta",
+    "email": "anshika@example.com",
+    "password": "hahehoha"
+}'
+
+
+2. login
+curl -X POST http://localhost:8080/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john_doe",
+    "password": "securePassword123"
+  }'
+
+
+curl -X POST http://localhost:8080/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "john_doe",
+    "password": "123"
+  }'
+
+
+3. logout
+curl -X POST http://localhost:8080/api/logout \
+     -H "Content-Type: application/json" \
+     -d '{"username": "john_doe"}'
+
+
+4. reset_password
+curl -X POST http://localhost:8080/api/reset_password \
+     -H "Content-Type: application/json" \
+     -d '{
+            "username": "john_doe",
+            "old_password": "securePassword321",
+            "new_password": "securePassword123"
+         }'
+
+5. get_user_details
+curl "http://localhost:8080/api/get_user_details?username=anshikag020"
+
+
+6. create_group
+
+curl -X PUT http://localhost:8080/api/create_group \
+-H "Content-Type: application/json" \
+-d '{
+  "username": "anshikag020",
+  "group_name": "My New Group",
+  "group_description": "This is a description of the new group",
+  "group_type": "Normal Group"
+}'
+
+curl -X PUT http://localhost:8080/api/create_group \
+-H "Content-Type: application/json" \
+-d '{
+  "username": "anshikag020",
+  "group_name": "My New Group",
+  "group_description": "This is a description of the new group",
+  "group_type": "OTS Group"
+}'
+
+7. Create Private Split
+
+curl -X PUT http://localhost:8080/api/create_private_split \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "alice",
+    "username_2": "bob",
+    "group_description": "Trip to Manali"
+  }'
+
+
+curl -X PUT http://localhost:8080/api/create_private_split \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "anshikag020",
+    "username_2": "user1",
+    "group_description": "Trip to Manali"
+  }'
+
+
+8. Join Group
+
+curl -X PUT http://localhost:8080/api/join_group \
+-H "Content-Type: application/json" \
+-d '{
+  "username": "anshikag020",
+  "invite_code": "+IFAhCOG"
+}'
+
+
+9. Get groups
+
+curl -X GET http://localhost:8080/api/get_groups \
+     -H "Content-Type: application/json" \
+     -d '{"username": "anshikag020"}'
+
+10. Get group details
+
+curl -X GET http://localhost:8080/api/get_group_details \
+     -H "Content-Type: application/json" \
+     -d '{"group_id": "2ac7392b-0f69-4c6e-8b5f-5ddb4d184f57"}'
