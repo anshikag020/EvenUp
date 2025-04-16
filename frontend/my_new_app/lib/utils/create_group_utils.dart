@@ -55,12 +55,14 @@ Widget buildRadio({
   );
 }
 
-Widget buildActionButton(String text,Gradient gradient, VoidCallback onPressed) {
+Widget buildActionButton( double width, String text, Gradient gradient, VoidCallback onPressed) {
+  
   return ElevatedButton(
     onPressed: onPressed,
     style: ElevatedButton.styleFrom(
       padding: EdgeInsets.zero,
-      fixedSize: const Size(100, 38),
+      fixedSize: Size(width*0.25, width*0.1),
+      // fixedSize: Size(100, 38),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       backgroundColor: Colors.transparent,
       shadowColor: Colors.transparent,

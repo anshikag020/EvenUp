@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 
 class PingCard extends StatelessWidget {
   final String name;
@@ -19,12 +20,14 @@ class PingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width; 
     return Card(
       color: const Color(0xFF1E1E1E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.fromLTRB(0, 15, 0, 15),
+        // padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -40,7 +43,7 @@ class PingCard extends StatelessWidget {
                                     
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -67,8 +70,8 @@ class PingCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 SizedBox(
-                  width: 150, // ✅ Set desired width
-                  height: 50,
+                  width: width * 0.25,
+                  height: width * 0.1,
                   child: Material(
                     borderRadius: BorderRadius.circular(30),
                     child: Ink(
@@ -81,12 +84,30 @@ class PingCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: InkWell(
-                        onTap: onAccept,
+                        onTap: (){
+                          showDialog(
+                              context: context,
+                              builder: (context) => ConfirmationDialog(
+                                message: 'Are you sure you want to accept this transaction?',
+                                onConfirm: () {
+                                  // Navigator.pop(context); // Close the dialog
+                                  // ✅ Place your group creation logic here
+                                  onAccept(); 
+                                },
+                                onCancel: () {
+                                   // Just close the dialog
+                                },
+                              ),
+                            );
+                        },
                         borderRadius: BorderRadius.circular(30),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'Accept',
-                            style: TextStyle(color: Colors.white, fontSize: 18),
+                              'Accept',
+                              style: TextStyle(color: Colors.white, 
+                              fontSize: width*0.038,
+                              // fontSize: 18
+                            ),
                           ),
                         ),
                       ),
@@ -95,8 +116,8 @@ class PingCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
                 SizedBox(
-                  width: 150, // ✅ Set desired width
-                  height: 50,
+                  width: width * 0.25,
+                  height: width * 0.1,
                   child: Material(
                     borderRadius: BorderRadius.circular(30),
                     child: Ink(
@@ -109,12 +130,26 @@ class PingCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: InkWell(
-                        onTap: onReject,
+                        onTap: (){
+                          showDialog(
+                              context: context,
+                              builder: (context) => ConfirmationDialog(
+                                message: 'Are you sure you want to reject this transaction?',
+                                onConfirm: () {
+                                  onReject; 
+                                },
+                                onCancel: () {
+                                  // handle this
+                                },
+                              ),
+                            );
+                        },
                         borderRadius: BorderRadius.circular(30),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'Reject',
-                            style: TextStyle(color: Colors.white, fontSize: 18),
+                              'Reject',
+                              style: TextStyle(color: Colors.white, fontSize: width*0.038, 
+                            ),
                           ),
                         ),
                       ),

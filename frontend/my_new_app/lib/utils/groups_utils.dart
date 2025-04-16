@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/sections/group_detailed_page.dart'; // Adjust import path as needed
 
 class GroupTile extends StatelessWidget {
+  final String groupID; 
   final String name;
   final int size;
   final String description; 
@@ -10,6 +11,7 @@ class GroupTile extends StatelessWidget {
   final String groupType; 
 
   const GroupTile({
+    required this.groupID,  
     required this.name,
     required this.size,
     required this.description,
@@ -26,6 +28,7 @@ class GroupTile extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => GroupDetailScreen(
+              groupID: groupID,
               groupName: name,
               groupType: groupType, // Use dynamic value when backend is integrated
               inviteCode: inviteCode, // Placeholder for now

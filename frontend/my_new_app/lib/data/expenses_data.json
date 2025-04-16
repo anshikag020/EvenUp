@@ -1,0 +1,19 @@
+[
+    {
+      "expenseID": "XXX123",
+      "description": "This group is just made for testing the app.",
+      "amount": "500"    },
+    {
+      "expenseID": "XXX124",
+      "description": "Dinner with friends.",
+      "amount": "1200"    },
+    {
+      "expenseID": "XXX125",
+      "description": "Snacks for group meeting. here is more to this",
+      "amount": "350"    },
+    {
+      "expenseID": "XXX130",
+      "description": "Subscription for shared tools that we all use to collaborate on projects. I am just testing this if this text gets cut in between, cause this text is more than 2 lines so it should end with ellipses.",
+      "amount": "999"    }
+  ]
+  

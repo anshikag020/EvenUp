@@ -14,7 +14,6 @@ class TransactionsHistoryScreen extends StatefulWidget {
 
 class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
-
   late final TransactionService _transactionService;
   List<TransactionModel> _allTransactions = [];
   List<TransactionModel> _filteredTransactions = [];
@@ -26,7 +25,7 @@ class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
     _fetchTransactions();
     _searchController.addListener(_searchTransaction);
   }
-
+ 
   Future<void> _fetchTransactions() async {
     final data = await _transactionService.fetchTransactions();
     setState(() {
@@ -92,7 +91,12 @@ class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
                       itemCount: _filteredTransactions.length,
                       itemBuilder: (_, index) {
                         final txn = _filteredTransactions[index];
-                        return FancyTransactionTile(name: txn.name, amount: txn.amount);
+                        return FancyTransactionTile(
+                                groupName: txn.groupName, 
+                                name: txn.name, 
+                                amount: txn.amount,
+                                type: txn.type
+                              );
                       },
                     )
                   : Center(

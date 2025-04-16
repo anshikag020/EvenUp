@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/create_group_utils.dart';
 
 class CreateGroupDialog extends StatefulWidget {
@@ -16,12 +17,13 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width; 
     return Dialog(
       backgroundColor: const Color(0xFF1C1C1C),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SingleChildScrollView(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 25,
+          bottom: 16,
           left: 16,
           right: 16,
           top: 16,
@@ -72,15 +74,26 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                buildActionButton("Create",LinearGradient(
+                buildActionButton(width, "Create",LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [Color.fromRGBO(208, 227, 64, 1), Color.fromRGBO(28, 54, 6, 1)],
                       ), () {
-                  Navigator.pop(context);
-                  // Call your group creation logic here
-                }),
-                buildActionButton("Cancel", LinearGradient(
+                              showDialog(
+                                    context: context,
+                                    builder: (context) => ConfirmationDialog(
+                                      message: 'Are you sure you want to create this group?',
+                                      onConfirm: () {
+                                        Navigator.pop(context); // Close the dialog
+                                        // ✅ Place your group creation logic here
+                                      },
+                                      onCancel: () {
+                                        Navigator.pop(context); // Just close the dialog
+                                      },
+                                    ),
+                                  );                  // Call your group creation logic here
+                      }),
+                buildActionButton(width, "Cancel", LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [Color.fromRGBO(255, 71, 139, 1), Color.fromRGBO(58, 11, 30, 1)],

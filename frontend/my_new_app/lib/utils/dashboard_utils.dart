@@ -18,6 +18,8 @@ class DashboardTileHor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width; 
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(30),
@@ -36,13 +38,18 @@ class DashboardTileHor extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
+              Flexible(
+                
+                child: 
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: width*0.05,
+                      // fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),  
               ),
               Icon(icon, color: Colors.white, size: 35),
             ],
@@ -68,6 +75,7 @@ class DashboardTileVer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width; 
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(30),
@@ -92,7 +100,8 @@ class DashboardTileVer extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: width*0.042,
+                  // fontSize: 20,
                   fontWeight: FontWeight.w500,
                 ),
               ),

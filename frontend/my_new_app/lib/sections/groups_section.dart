@@ -94,7 +94,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       child: Text(
                         "No groups found.",
                         style: GoogleFonts.poppins(
-                          color: Colors.white54,
+                          color: const Color.fromARGB(137, 253, 113, 113),
                           fontSize: 16,
                         ),
                       ),
@@ -106,6 +106,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                         if (index < filteredGroups.length) {
                           final group = filteredGroups[index];
                           return GroupTile(
+                            groupID: group.groupID,
                             name: group.name,
                             size: group.size,
                             description: group.description,

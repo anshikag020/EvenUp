@@ -14,4 +14,22 @@ void setupLocator({bool useMock = true}) {
 
   locator.registerLazySingleton<GroupService>(() =>
       useMock ? MockGroupService() : ApiGroupService(baseUrl: 'http://localhost:8080'));
+  
+  locator.registerLazySingleton<GroupMemberService>(() =>
+      useMock ? MockGroupMemberService() : ApiGroupMemberService(baseUrl: 'http://localhost:8080'));
+
+  locator.registerLazySingleton<ExpenseService>(
+    () => useMock ? MockExpenseService() : ApiExpenseService(baseUrl: 'http://localhost:8080'),
+  );
+
+  locator.registerLazySingleton<DetailedExpenseService>(
+    () => useMock ? MockDetailedExpenseService() : ApiDetailedExpenseService(baseUrl: 'http://localhost:8080'),
+  );
+
+  locator.registerLazySingleton<BalanceService>(
+    () => useMock
+        ? MockBalanceService()
+        : ApiBalanceService(baseUrl: 'http://localhost:8080'),
+  );
+
 }

@@ -1,5 +1,6 @@
 [
     {
+      "groupID": "grp1",
       "name": "Team Meet",
       "size": 10,
       "description": "This is the Group 1, this is a demo group description.",
@@ -7,6 +8,7 @@
       "groupType": "NORMAL"
     },
     {
+      "groupID": "grp2",
       "name": "Trial Group",
       "size": 7,
       "description": "This is the Group 2, this is a demo group description.",
@@ -14,6 +16,7 @@
       "groupType": "OTS"
     },
     {
+      "groupID": "grp3",
       "name": "Demo Group",
       "size": 5,
       "description": "This is the Group 3, this is a demo group description.",
@@ -21,6 +24,7 @@
       "groupType": "GREY"
     },
     {
+      "groupID": "grp4",
       "name": "Demo2",
       "size": 8,
       "description": "This is the Group 4, this is a demo group description.",
@@ -28,6 +32,7 @@
       "groupType": "OTS"
     },
     {
+      "groupID": "grp5",
         "name": "Demo2",
         "size": 8,
         "description": "This is the Group 4, this is a demo group description.",
@@ -35,6 +40,7 @@
         "groupType": "OTS"
       },
       {
+        "groupID": "grp6",
         "name": "Demo2",
         "size": 8,
         "description": "This is the Group 4, this is a demo group description.",
@@ -42,6 +48,7 @@
         "groupType": "OTS"
       },
       {
+        "groupID": "grp7",
         "name": "Demo2",
         "size": 8,
         "description": "This is the Group 4, this is a demo group description.",
@@ -49,6 +56,7 @@
         "groupType": "OTS"
       },
     {
+      "groupID": "grp8",
       "name": "Demo2",
       "size": 8,
       "description": "This is the Group 4, this is a demo group description.",

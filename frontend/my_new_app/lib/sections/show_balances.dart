@@ -1,0 +1,148 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/models/groups_section_model.dart';
+import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import '../locator.dart';
+
+class AllBalancesScreen extends StatefulWidget {
+  final String username;
+
+  const AllBalancesScreen({super.key, required this.username});
+
+  @override
+  State<AllBalancesScreen> createState() => _AllBalancesScreenState();
+}
+
+class _AllBalancesScreenState extends State<AllBalancesScreen> {
+  late Future<List<Balance>> _balancesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _balancesFuture = locator<BalanceService>().fetchBalances();
+  }
+
+  void _remindUser(String user1, String user2) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Reminder sent to $user1 to pay $user2"),
+        backgroundColor: Colors.pink,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2D2D2D),
+        title: Text(
+          "Balances",
+          style: GoogleFonts.poppins(fontSize: 22, color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: FutureBuilder<List<Balance>>(
+        future: _balancesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Text(
+                'No balances found.',
+                style: TextStyle(color: Colors.white70),
+              ),
+            );
+          } else {
+            final balances = snapshot.data!;
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ListView.builder(
+                itemCount: balances.length,
+                itemBuilder: (context, index) {
+                  final balance = balances[index];
+                  final isUser1 = balance.user1 == widget.username;
+                  final isUser2 = balance.user2 == widget.username;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 15),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2C2C2C),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            "${balance.user1} owes ${balance.user2} ₹${balance.amount}",
+                            style: GoogleFonts.poppins(color: Colors.white),
+                          ),
+                          const SizedBox(height: 12),
+                          if (isUser1)
+                            ElevatedButton(
+                              onPressed: () {
+                                // Settle up logic to be implemented
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4CAF50),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: Text(
+                                "Settle up",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            )
+                          else if (isUser2)
+                            ElevatedButton(
+                              onPressed: () => _remindUser(balance.user1, balance.user2),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE91E63),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: Text(
+                                "Remind",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
