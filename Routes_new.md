@@ -321,11 +321,16 @@ We can use this to store the session values in the cookie (backend).
 ```json
 { 
   "is_admin": "bool",      // like: true: Success, false: Failure
-  "status": "bool",         // like: true: Success, false: Failure
-  "message": "string"       // like: "Group exited successfully", "Cannot exit group! All balances not settled", "Group not found", "Admin!", "Transactions not completely settled" 
+  "status": "bool",         // like: true: Success, false: Failure    // if the user is admin, then this will be false
+  "message": "string",       // like: "Group exited successfully", "Cannot exit group! All balances not settled", "Group not found", "Admin!", "Transactions not completely settled" 
+  "members_list": [         // this list is empty if the user is not admin
+    "username" : "string",
+    "name" : "string"
+  ]
 }
 ```
 
+// Through this route, another admin must be set, then the current admin will exit the group
 ### 15. SELECT ANOTHER ADMIN
 **Route**: ```/api/select_another_admin```\
 **METHOD**: ```PUT```\
@@ -333,6 +338,7 @@ We can use this to store the session values in the cookie (backend).
 **Request body**:
 ```json
 {  
+  "username": "string",       // username of the person who is exiting
   "group_id": "string",
   "new_admin": "string",
   "cookie"

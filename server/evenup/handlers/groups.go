@@ -7,6 +7,7 @@ import(
 	"github.com/google/uuid"
 	"fmt"
 	"log"
+	"database/sql"
 )
 
 func GetGroups(w http.ResponseWriter, r *http.Request) {
@@ -195,5 +196,182 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
 		"members": members,
+	})
+}
+
+func ExitGroupProcedure(username string, groupID uuid.UUID, isAdmin bool, newAdmin string) (bool, string) {
+	// placeholder for the actual exit group logic
+}
+
+
+
+func ExitGroup(w http.ResponseWriter, r *http.Request) {
+	var req map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	username, ok1 := req["username"].(string)
+	groupIDStr, ok2 := req["group_id"].(string)
+
+	if !ok1 || !ok2 {
+		http.Error(w, "Missing or invalid username/group_id", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := uuid.Parse(groupIDStr)
+	if err != nil {
+		http.Error(w, "Invalid group_id format", http.StatusBadRequest)
+		return
+	}
+
+	// Check if the user is the admin of the group
+	var adminUsername string
+	err = config.DB.QueryRow(`
+		SELECT admin_username FROM groups WHERE group_id = $1
+	`, groupID).Scan(&adminUsername)
+
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"is_admin":     false,
+			"status":       false,
+			"message":      "Group not found",
+			"members_list": []map[string]interface{}{},
+		})
+		return
+	}
+
+	if adminUsername != username {
+		// Not admin – call ExitGroupProcedure
+		status, message := ExitGroupProcedure(username, groupID, false, "")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"is_admin":     false,
+			"status":       status,
+			"message":      message,
+			"members_list": []map[string]interface{}{},
+		})
+		return
+	}
+
+	// User is admin – get other members
+	rows, err := config.DB.Query(`
+		SELECT u.username, u.name
+		FROM group_participants gp
+		JOIN users u ON gp.participant = u.username
+		WHERE gp.group_id = $1 AND gp.participant != $2
+	`, groupID, username)
+	if err != nil {
+		log.Println("Error fetching members:", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var members []map[string]interface{}
+	for rows.Next() {
+		var uname, name string
+		if err := rows.Scan(&uname, &name); err != nil {
+			log.Println("Row scan error:", err)
+			continue
+		}
+		members = append(members, map[string]interface{}{
+			"username": uname,
+			"name":     name,
+		})
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"is_admin":     true,
+		"status":       false,
+		"message":      "Admin!",
+		"members_list": members,
+	})
+}
+
+
+func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
+	var req map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	username, ok1 := req["username"].(string)
+	groupIDStr, ok2 := req["group_id"].(string)
+	newAdmin, ok3 := req["new_admin"].(string)
+
+	if !ok1 || !ok2 || !ok3 {
+		http.Error(w, "Missing or invalid parameters", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := uuid.Parse(groupIDStr)
+	if err != nil {
+		http.Error(w, "Invalid group_id format", http.StatusBadRequest)
+		return
+	}
+
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	// Check if group exists
+	var dummy string
+	err = tx.QueryRow(`SELECT group_id FROM groups WHERE group_id = $1`, groupID).Scan(&dummy)
+	if err == sql.ErrNoRows {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "Group not found",
+		})
+		return
+	} else if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if newAdmin is a participant in the group
+	var exists string
+	err = tx.QueryRow(`
+		SELECT participant FROM group_participants 
+		WHERE group_id = $1 AND participant = $2
+	`, groupID, newAdmin).Scan(&exists)
+
+	if err == sql.ErrNoRows {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "The selected new admin is not a member of the group",
+		})
+		return
+	} else if err != nil {
+		http.Error(w, "Database error during participant check", http.StatusInternalServerError)
+		return
+	}
+
+	// Call ExitGroupProcedure
+	status, message := ExitGroupProcedure(username, groupID, true, newAdmin)
+
+	if status {
+		// Update admin only if ExitGroupProcedure succeeded
+		_, err := tx.Exec(`
+			UPDATE groups SET admin_username = $1 WHERE group_id = $2
+		`, newAdmin, groupID)
+		if err != nil {
+			http.Error(w, "Failed to update admin", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  status,
+		"message": message,
 	})
 }
