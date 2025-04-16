@@ -199,9 +199,81 @@ func GetMembers(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func ExitGroupProcedure(username string, groupID uuid.UUID, isAdmin bool, newAdmin string) (bool, string) {
-	// placeholder for the actual exit group logic
+func ExitGroupProcedure(tx *sql.Tx, username string, groupID uuid.UUID) (bool, string) {
+	// 1. Check if group exists
+	var temp string
+	err := tx.QueryRow(`SELECT group_id FROM groups WHERE group_id = $1`, groupID).Scan(&temp)
+	if err == sql.ErrNoRows {
+		return false, "Group not found"
+	} else if err != nil {
+		return false, "Database error while checking group existence"
+	}
+
+	// 2. Check if user is part of the group
+	err = tx.QueryRow(`
+		SELECT participant FROM group_participants 
+		WHERE group_id = $1 AND participant = $2
+	`, groupID, username).Scan(&temp)
+	if err == sql.ErrNoRows {
+		return false, "User not part of the group"
+	} else if err != nil {
+		return false, "Database error while checking group participation"
+	}
+
+	// 3. Check for outstanding balances
+	row := tx.QueryRow(`
+		SELECT sender, receiver, amount FROM balances
+		WHERE group_id = $1 AND amount <> 0 AND (sender = $2 OR receiver = $2)
+		LIMIT 1
+	`, groupID, username)
+
+	var sender, receiver string
+	var amount float64
+	err = row.Scan(&sender, &receiver, &amount)
+	if err != sql.ErrNoRows && err != nil {
+		return false, "Database error while checking balances"
+	}
+	if err != sql.ErrNoRows {
+		return false, "Cannot exit group! All balances not settled"
+	}
+
+	// 4. Check for incomplete intermediate transactions
+	row = tx.QueryRow(`
+		SELECT sender, receiver, amount FROM intermediate_transactions
+		WHERE group_id = $1 AND amount <> 0 AND confirmed = FALSE 
+		AND (sender = $2 OR receiver = $2)
+		LIMIT 1
+	`, groupID, username)
+
+	err = row.Scan(&sender, &receiver, &amount)
+	if err != sql.ErrNoRows && err != nil {
+		return false, "Database error while checking transactions"
+	}
+	if err != sql.ErrNoRows {
+	var other string
+	if sender == username {
+		other = receiver
+	} else {
+		other = sender
+	}
+	return false, fmt.Sprintf("Transactions not completely settled with %s", other)
+	}
+
+
+
+	// 5. Everything OK, remove from group_participants
+	_, err = tx.Exec(`
+		DELETE FROM group_participants
+		WHERE group_id = $1 AND participant = $2
+	`, groupID, username)
+	if err != nil {
+		return false, "Failed to remove user from group"
+	}
+
+
+	return true, "Group exited successfully"
 }
+
 
 
 
@@ -226,9 +298,66 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+
+	// Check if user is part of the group
+	var participant string
+	err = tx.QueryRow(`
+		SELECT participant FROM group_participants
+		WHERE group_id = $1 AND participant = $2
+	`, groupID, username).Scan(&participant)
+	if err == sql.ErrNoRows {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "User not part of the group",
+		})
+		return
+	} else if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if user is the last member of the group
+	var count int
+	err = tx.QueryRow(`
+		SELECT COUNT(*) FROM group_participants
+		WHERE group_id = $1
+	`, groupID).Scan(&count)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	if count == 1 {
+		// If the user is the last member, delete the group
+		// print yes
+		fmt.Println("Deleting group as user is the last member")
+		// print groupID
+		fmt.Println("Group ID:", groupID)
+		_, err = tx.Exec(`
+			DELETE FROM groups WHERE group_id = $1
+		`, groupID)
+		if err != nil {
+			fmt.Println("Error deleting group:", err)
+			http.Error(w, "Failed to delete group", http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  true,
+			"message": "Group deleted successfully",
+		})
+		return
+	}
+
 	// Check if the user is the admin of the group
 	var adminUsername string
-	err = config.DB.QueryRow(`
+	err = tx.QueryRow(`
 		SELECT admin_username FROM groups WHERE group_id = $1
 	`, groupID).Scan(&adminUsername)
 
@@ -244,7 +373,17 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 
 	if adminUsername != username {
 		// Not admin – call ExitGroupProcedure
-		status, message := ExitGroupProcedure(username, groupID, false, "")
+		status, message := ExitGroupProcedure(tx, username, groupID)
+
+		if status {
+			if err := tx.Commit(); err != nil {
+				log.Println("Transaction commit error:", err)
+				http.Error(w, "Transaction failed", http.StatusInternalServerError)
+				return
+			}
+		}
+	
+		
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"is_admin":     false,
 			"status":       status,
@@ -255,7 +394,7 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// User is admin – get other members
-	rows, err := config.DB.Query(`
+	rows, err := tx.Query(`
 		SELECT u.username, u.name
 		FROM group_participants gp
 		JOIN users u ON gp.participant = u.username
@@ -281,6 +420,8 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"is_admin":     true,
 		"status":       false,
@@ -291,6 +432,7 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 
 
 func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	var req map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -351,8 +493,9 @@ func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	// Call ExitGroupProcedure
-	status, message := ExitGroupProcedure(username, groupID, true, newAdmin)
+	status, message := ExitGroupProcedure(tx, username, groupID)
 
 	if status {
 		// Update admin only if ExitGroupProcedure succeeded
@@ -375,3 +518,5 @@ func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
 		"message": message,
 	})
 }
+
+

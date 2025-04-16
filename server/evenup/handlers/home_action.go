@@ -8,6 +8,7 @@ import(
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	//"golang.org/x/crypto/bcrypt"
 	"github.com/google/uuid"
+	"log"
 )
 
 func GetUserDetails (w http.ResponseWriter, r *http.Request) {
@@ -278,6 +279,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 		VALUES ($1, $2)
 	`, groupID, req.Username)
 	if err != nil {
+		log.Println("Error inserting into group_participants:", err)
 		http.Error(w, "Failed to add to group_participants", http.StatusInternalServerError)
 		return
 	}

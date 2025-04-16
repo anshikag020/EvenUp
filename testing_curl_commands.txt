@@ -3,19 +3,46 @@
 curl -X POST http://localhost:8080/api/signup \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "john_doe",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "password": "securePassword123"
+    "username": "alice01",
+    "name": "Alice Smith",
+    "email": "alice@example.com",
+    "password": "alicePass123"
 }'
 
 curl -X POST http://localhost:8080/api/signup \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "anshikag020",
-    "name": "Anshika Gupta",
-    "email": "anshika@example.com",
-    "password": "hahehoha"
+    "username": "bob02",
+    "name": "Bob Johnson",
+    "email": "bob@example.com",
+    "password": "bobPass123"
+}'
+
+curl -X POST http://localhost:8080/api/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "carol03",
+    "name": "Carol Davis",
+    "email": "carol@example.com",
+    "password": "carolPass123"
+}'
+
+curl -X POST http://localhost:8080/api/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "dave04",
+    "name": "Dave Wilson",
+    "email": "dave@example.com",
+    "password": "davePass123"
+}'
+
+curl -X POST http://localhost:8080/api/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "emma05",
+    "name": "Emma Thomas",
+    "email": "emma@example.com",
+    "password": "emmaPass123"
 }'
 
 
@@ -119,3 +146,24 @@ curl -X GET http://localhost:8080/api/get_groups \
 11. Get members of a group
 
 curl -X GET "http://localhost:8080/api/get_members?group_id=2ac7392b-0f69-4c6e-8b5f-5ddb4d184f57"
+
+
+12. Exit group
+curl -X DELETE http://localhost:8080/api/exit_group \
+-H "Content-Type: application/json" \
+-d '{
+    "username": "alice01",
+    "group_id": "1ad139f5-abb6-4517-b41a-468ba380ed0b"
+}'
+
+
+13. SELECT ANOTHER Admin
+curl -X DELETE http://localhost:8080/api/select_another_admin \
+-H "Content-Type: application/json" \
+-d '{
+  "username": "alice01",
+  "group_id": "1ad139f5-abb6-4517-b41a-468ba380ed0b",
+  "new_admin": "bob02"
+}'
+
+

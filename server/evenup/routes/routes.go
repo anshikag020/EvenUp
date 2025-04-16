@@ -24,6 +24,7 @@ func RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/api/get_groups", handlers.GetGroups).Methods("GET")
 	router.HandleFunc("/api/get_group_details", handlers.GetGroupDetails).Methods("GET")
 	router.HandleFunc("/api/get_members", handlers.GetMembers).Methods("GET")
-	router.HandleFunc("/api/exit_group", handlers.ExitGroup).Methods("PUT")
+	router.HandleFunc("/api/exit_group", handlers.ExitGroup).Methods("DELETE")
+	router.HandleFunc("/api/select_another_admin", handlers.SelectAnotherAdmin).Methods("DELETE")
 
 }

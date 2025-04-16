@@ -304,8 +304,8 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-//Note: If the user exiting is an admin, should we send the list of members in the group here?
-### 14. EXIT GROUP
+// what if the user is the last member in the group? (error in this case)
+### 14. EXIT GROUP      
 **Route**: ```/api/exit_group```\
 **METHOD**: ```DELETE```\
 **Description**: Used for exiting a group.\
@@ -331,9 +331,9 @@ We can use this to store the session values in the cookie (backend).
 ```
 
 // Through this route, another admin must be set, then the current admin will exit the group
-### 15. SELECT ANOTHER ADMIN
+### 15. SELECT ANOTHER ADMIN    (done)
 **Route**: ```/api/select_another_admin```\
-**METHOD**: ```PUT```\
+**METHOD**: ```DELETE```\
 **Description**: Used for selecting another admin, when former admin wants to exit group.\
 **Request body**:
 ```json
