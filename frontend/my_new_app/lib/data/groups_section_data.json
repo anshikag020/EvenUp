@@ -25,7 +25,7 @@
     },
     {
       "groupID": "grp4",
-      "name": "Demo2",
+      "name": "Dem 7",
       "size": 8,
       "description": "This is the Group 4, this is a demo group description.",
       "inviteCode": "XXX123XXX15",
@@ -33,7 +33,7 @@
     },
     {
       "groupID": "grp5",
-        "name": "Demo2",
+        "name": "Demo 8",
         "size": 8,
         "description": "This is the Group 4, this is a demo group description.",
         "inviteCode": "XXX123XXX15",
@@ -41,7 +41,7 @@
       },
       {
         "groupID": "grp6",
-        "name": "Demo2",
+        "name": "Demo 9",
         "size": 8,
         "description": "This is the Group 4, this is a demo group description.",
         "inviteCode": "XXX123XXX15",
@@ -49,7 +49,7 @@
       },
       {
         "groupID": "grp7",
-        "name": "Demo2",
+        "name": "Demo 11",
         "size": 8,
         "description": "This is the Group 4, this is a demo group description.",
         "inviteCode": "XXX123XXX15",
@@ -57,7 +57,31 @@
       },
     {
       "groupID": "grp8",
-      "name": "Demo2",
+      "name": "Demo 12",
+      "size": 8,
+      "description": "This is the Group 4, this is a demo group description.",
+      "inviteCode": "XXX123XXX15",
+      "groupType": "OTS"
+    },
+    {
+      "groupID": "grp7",
+      "name": "Demo 13",
+      "size": 8,
+      "description": "This is the Group 4, this is a demo group description.",
+      "inviteCode": "XXX123XXX15",
+      "groupType": "OTS"
+    },
+    {
+      "groupID": "grp7",
+      "name": "Demo 14",
+      "size": 8,
+      "description": "This is the Group 4, this is a demo group description.",
+      "inviteCode": "XXX123XXX15",
+      "groupType": "OTS"
+    },
+    {
+      "groupID": "grp7",
+      "name": "Demo 15",
       "size": 8,
       "description": "This is the Group 4, this is a demo group description.",
       "inviteCode": "XXX123XXX15",

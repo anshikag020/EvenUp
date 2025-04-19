@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 
 class PingCard extends StatelessWidget {
+  final String transacID;
   final String name;
   final int amount;
   final String groupName;
@@ -11,6 +12,7 @@ class PingCard extends StatelessWidget {
 
   const PingCard({
     Key? key,
+    required this.transacID, 
     required this.name,
     required this.amount,
     required this.groupName,
@@ -20,7 +22,7 @@ class PingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width; 
+    double width = MediaQuery.of(context).size.width;
     return Card(
       color: const Color(0xFF1E1E1E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -36,11 +38,10 @@ class PingCard extends StatelessWidget {
               child: Text(
                 'Group: $groupName',
                 style: GoogleFonts.poppins(
-                                      color: const Color.fromARGB(255, 151, 151, 151),
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    
+                  color: const Color.fromARGB(255, 151, 151, 151),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -79,33 +80,39 @@ class PingCard extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color.fromRGBO(208, 227, 64, 1), Color.fromRGBO(28, 54, 6, 1)],
+                          colors: [
+                            Color.fromRGBO(208, 227, 64, 1),
+                            Color.fromRGBO(28, 54, 6, 1),
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: InkWell(
-                        onTap: (){
+                        onTap: () {
                           showDialog(
-                              context: context,
-                              builder: (context) => ConfirmationDialog(
-                                message: 'Are you sure you want to accept this transaction?',
-                                onConfirm: () {
-                                  // Navigator.pop(context); // Close the dialog
-                                  // ✅ Place your group creation logic here
-                                  onAccept(); 
-                                },
-                                onCancel: () {
-                                   // Just close the dialog
-                                },
-                              ),
-                            );
+                            context: context,
+                            builder:
+                                (context) => ConfirmationDialog(
+                                  message:
+                                      'Are you sure you want to accept this transaction?',
+                                  onConfirm: () {
+                                    // Navigator.pop(context); // Close the dialog
+                                    // ✅ Place your group creation logic here
+                                    onAccept();
+                                  },
+                                  onCancel: () {
+                                    // Just close the dialog
+                                  },
+                                ),
+                          );
                         },
                         borderRadius: BorderRadius.circular(30),
                         child: Center(
                           child: Text(
-                              'Accept',
-                              style: TextStyle(color: Colors.white, 
-                              fontSize: width*0.038,
+                            'Accept',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: width * 0.038,
                               // fontSize: 18
                             ),
                           ),
@@ -125,30 +132,37 @@ class PingCard extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color.fromRGBO(255, 71, 139, 1), Color.fromRGBO(58, 11, 30, 1)],
+                          colors: [
+                            Color.fromRGBO(255, 71, 139, 1),
+                            Color.fromRGBO(58, 11, 30, 1),
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: InkWell(
-                        onTap: (){
+                        onTap: () {
                           showDialog(
-                              context: context,
-                              builder: (context) => ConfirmationDialog(
-                                message: 'Are you sure you want to reject this transaction?',
-                                onConfirm: () {
-                                  onReject; 
-                                },
-                                onCancel: () {
-                                  // handle this
-                                },
-                              ),
-                            );
+                            context: context,
+                            builder:
+                                (context) => ConfirmationDialog(
+                                  message:
+                                      'Are you sure you want to reject this transaction?',
+                                  onConfirm: () {
+                                    onReject;
+                                  },
+                                  onCancel: () {
+                                    // handle this
+                                  },
+                                ),
+                          );
                         },
                         borderRadius: BorderRadius.circular(30),
                         child: Center(
                           child: Text(
-                              'Reject',
-                              style: TextStyle(color: Colors.white, fontSize: width*0.038, 
+                            'Reject',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: width * 0.038,
                             ),
                           ),
                         ),
@@ -157,8 +171,7 @@ class PingCard extends StatelessWidget {
                   ),
                 ),
               ],
-            )
-
+            ),
           ],
         ),
       ),

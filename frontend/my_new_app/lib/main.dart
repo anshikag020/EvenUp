@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:my_new_app/sections/main_page.dart';
+// import 'package:my_new_app/sections/main_page.dart';
+import 'package:my_new_app/splash_screen.dart';
 import 'locator.dart';
 
 void main() {
@@ -13,7 +14,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MainPage(),
+      // home: MainPage(),
+      home: AnimatedSplashScreenWidget(), 
     );
   }
 }
+

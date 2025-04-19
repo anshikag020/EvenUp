@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
+import 'package:my_new_app/utils/general_utils.dart';
 import 'package:my_new_app/utils/join_group_utils.dart';
 
 class JoinGroupDialog extends StatefulWidget {
@@ -59,8 +60,13 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
                       builder: (context) => ConfirmationDialog(
                         message: 'Are you sure you want to join this group?',
                         onConfirm: () {
+                          //  handle logic here
                           Navigator.pop(context); // Close the dialog
-                          // ✅ Place your group creation logic here
+                          showCustomSnackBar(
+                                context,
+                                "Joined new group successfully",
+                                backgroundColor: const Color.fromARGB(255, 175, 155, 39)
+                              );
                         },
                         onCancel: () {
                           Navigator.pop(context); // Just close the dialog

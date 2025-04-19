@@ -1,0 +1,11 @@
+[
+    { "transacID": "XXX123" ,"groupName": "Group 1","username": "Yash", "amount": 1000},
+    { "transacID": "XXX124" ,"groupName": "Group 2","username": "Anshika", "amount": 500},
+    { "transacID": "XXX125" ,"groupName": "Group 3","username": "Anirudh", "amount": 750},
+    { "transacID": "XXX126" ,"groupName": "Group 4","username": "Hardik", "amount": 1000},
+    { "transacID": "XXX127" ,"groupName": "Group 5","username": "Samyak", "amount": 500},
+    { "transacID": "XXX128" ,"groupName": "Group 6","username": "Dhawal", "amount": 1000},
+    { "transacID": "XXX128" ,"groupName": "Group 7","username": "Manan", "amount": 500},
+    { "transacID": "XXX129" ,"groupName": "Group 8","username": "Ayush", "amount": 1000},
+    { "transacID": "XXX130" ,"groupName": "Group 9","username": "Adish", "amount": 500}
+]

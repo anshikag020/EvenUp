@@ -1,0 +1,142 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
+import 'package:my_new_app/models/pinged_section_model.dart';
+import 'package:my_new_app/services/service%20interfaces/pinged_section_service_interface.dart';
+import 'package:my_new_app/utils/pinged_section_utils.dart';
+
+class PingedScreen extends StatefulWidget {
+  const PingedScreen({super.key});
+
+  @override
+  State<PingedScreen> createState() => _PingedScreenState();
+}
+
+class _PingedScreenState extends State<PingedScreen> {
+  late final PingedSectionService _pingedservice;
+  final TextEditingController _searchController = TextEditingController();
+
+  List<PingedSectionModel> _allPings = [];
+  List<PingedSectionModel> _filteredPings = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _pingedservice = locator<PingedSectionService>();
+    _fetchTransactions();
+    _searchController.addListener(_filterPings);
+  }
+
+  Future<void> _fetchTransactions() async {
+    final data = await _pingedservice.fetchTransactions();
+    setState(() {
+      _allPings = data;
+      _filteredPings = data;
+    });
+  }
+
+  void _filterPings() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredPings = _allPings
+          .where((ping) => ping.username.toLowerCase().contains(query))
+          .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      appBar: AppBar(
+        toolbarHeight: 80,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 40, bottom: 20),
+          child: Text(
+            'Pinged',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 35,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search by username...',
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                filled: true,
+                fillColor: const Color(0xFF1E1E1E),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _filteredPings.isNotEmpty
+                  ? ListView.builder(
+                      itemCount: _filteredPings.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index < _filteredPings.length) {
+                          final ping = _filteredPings[index];
+                          return PingCard(
+                            transacID: ping.transacID,
+                            name: ping.username,
+                            amount: ping.amount,
+                            groupName: ping.groupName,
+                            onAccept: () {
+                              // handle accept
+                            },
+                            onReject: () {
+                              // handle reject
+                            },
+                          );
+                        } else {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                            child: Center(
+                              child: Text(
+                                'No more pinged transactions',
+                                style: TextStyle(color: Colors.white60),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    )
+                  : Center(
+                      child: Text(
+                        "No matching results",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white54,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

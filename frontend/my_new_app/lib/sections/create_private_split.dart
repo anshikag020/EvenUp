@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
+import 'package:my_new_app/utils/general_utils.dart';
 import 'package:my_new_app/utils/join_group_utils.dart';
 
 class CreatePrivateSplit extends StatefulWidget {
@@ -53,8 +54,13 @@ class _CreatePrivateSplitState extends State<CreatePrivateSplit> {
                     builder: (context) => ConfirmationDialog(
                       message: 'Are you sure you want to create this private-split?',
                       onConfirm: () {
+                        // handle logic here
                         Navigator.pop(context); // Close the dialog
-                        // ✅ Place your group creation logic here
+                        showCustomSnackBar(
+                                context,
+                                "New private-split created successfully",
+                                backgroundColor: const Color.fromRGBO(15, 111, 179, 1)
+                              );
                       },
                       onCancel: () {
                         Navigator.pop(context); // Just close the dialog

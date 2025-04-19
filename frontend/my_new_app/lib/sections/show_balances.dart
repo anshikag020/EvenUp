@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import 'package:my_new_app/utils/confirmation_dialogbox.dart';
+import 'package:my_new_app/utils/general_utils.dart';
 import '../locator.dart';
 
 class AllBalancesScreen extends StatefulWidget {
@@ -22,14 +24,6 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
     _balancesFuture = locator<BalanceService>().fetchBalances();
   }
 
-  void _remindUser(String user1, String user2) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Reminder sent to $user1 to pay $user2"),
-        backgroundColor: Colors.pink,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,10 +86,35 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                           if (isUser1)
                             ElevatedButton(
                               onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (context) => ConfirmationDialog(
+                                        message:
+                                            'Do you wish to settle up this balance?',
+                                        onConfirm: () {
+                                          // handle logic here
+                                          showCustomSnackBar(
+                                            context,
+                                            "Balance settled up from your side",
+                                            backgroundColor:
+                                                const Color.fromARGB(255, 58, 133, 61),
+                                          );
+                                        },
+                                        onCancel: () {
+                                          // Just close the dialog
+                                        },
+                                      ),
+                                );
                                 // Settle up logic to be implemented
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4CAF50),
+                                backgroundColor: const Color.fromARGB(
+                                  255,
+                                  76,
+                                  175,
+                                  80,
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 24,
                                   vertical: 12,
@@ -114,7 +133,31 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                             )
                           else if (isUser2)
                             ElevatedButton(
-                              onPressed: () => _remindUser(balance.user1, balance.user2),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (context) => ConfirmationDialog(
+                                        message:
+                                            'Do you wish to send a reminder?',
+                                        onConfirm: () {
+                                          // handle here
+                                          
+                                          showCustomSnackBar(
+                                            context,
+                                            "Reminder sent to ${balance.user1} to pay ${balance.user2}",
+                                            backgroundColor:
+                                                const Color.fromARGB(
+                                                  255, 233, 30, 99
+                                                ),
+                                          );
+                                        },
+                                        onCancel: () {
+                                          // Just close the dialog
+                                        },
+                                      ),
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFE91E63),
                                 padding: const EdgeInsets.symmetric(

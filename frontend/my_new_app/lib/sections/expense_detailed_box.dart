@@ -3,13 +3,13 @@ import 'package:get_it/get_it.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
-
+import 'package:my_new_app/utils/general_utils.dart';
 
 class ExpenseDetailDialog extends StatelessWidget {
   final String expenseID;
   final VoidCallback onDelete;
 
-  ExpenseDetailDialog({
+  const ExpenseDetailDialog({
     Key? key,
     required this.expenseID,
     required this.onDelete,
@@ -17,7 +17,7 @@ class ExpenseDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width; 
+    double width = MediaQuery.of(context).size.width;
     const double maxListHeight = 100.0;
     final service = GetIt.instance<DetailedExpenseService>();
 
@@ -38,178 +38,198 @@ class ExpenseDetailDialog extends StatelessWidget {
 
         final expense = snapshot.data!;
         return Dialog(
-          backgroundColor: const Color(0xFF1E1E1E),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: EdgeInsets.all(width*0.04),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Description:',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(20),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                colors: [Color.fromARGB(255, 193, 249, 39), Color(0xFF1E1E1E)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              // boxShadow: [
+              //   BoxShadow(
+              //     color:  Color(0xFFCBFF41).withOpacity(0.6),
+              //     spreadRadius:1,
+              //     blurRadius: 15,
+              //   ),
+              // ],
+            ),
+            child: Container(
+              margin: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                color:  Color(0xFF1E1E1E).withOpacity(0.95),
+              ),
+              padding: EdgeInsets.all(width * 0.045),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          buildLabel('Description:'),
+                          buildText(expense.description),
+                          const SizedBox(height: 16),
+                          buildLabel('Paid by:'),
+                          buildList(expense.paidBy, maxListHeight),
+                          const SizedBox(height: 16),
+                          buildLabel('Owed by:'),
+                          buildList(expense.owedBy, maxListHeight),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Last Updated by: ${expense.lastUpdatedBy}',
+                            style: const TextStyle(color: Colors.white54),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          expense.description,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Paid by:',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          constraints: BoxConstraints(
-                            maxHeight: expense.paidBy.length > 4 ? maxListHeight : double.infinity,
-                          ),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: expense.paidBy.length,
-                            itemBuilder: (context, index) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4.0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.circle, color: Colors.white, size: 12),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    expense.paidBy[index],
-                                    style: const TextStyle(color: Colors.white70),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Owed by:',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          constraints: BoxConstraints(
-                            maxHeight: expense.owedBy.length > 4 ? maxListHeight : double.infinity,
-                          ),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: expense.owedBy.length,
-                            itemBuilder: (context, index) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4.0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.circle, color: Colors.white, size: 12),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    expense.owedBy[index],
-                                    style: const TextStyle(color: Colors.white70),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 25),
-                        Text(
-                          'Last Updated by: ${expense.lastUpdatedBy}',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Amount: ₹${expense.amount}',
-                      style: TextStyle(
-                        color: Color(0xFFCBFF41),
-                        fontSize: width *0.04,
-                        // fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 10,), 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        TextButton.icon(
-                          onPressed: (){
-                            showDialog(
-                              context: context,
-                              builder: (context) => ConfirmationDialog(
-                                message: 'Are you sure you want to edit this expense?',
-                                onConfirm: () {
-                                  Navigator.pop(context); // Close the dialog
-                                  // ✅ Place your group creation logic here
-                                },
-                                onCancel: () {
-                                  Navigator.pop(context); // Just close the dialog
-                                },
-                              ),
-                            ); 
-                          },
-                          icon: Icon(Icons.edit, color: Color.fromARGB(255, 248, 251, 58), size: width*0.04,),
-                          label: Text(
-                            'Edit',
-                            style: TextStyle( fontSize: width*0.04,color: Color.fromARGB(255, 248, 251, 58)),
-                          ),
+                  ),
+                  const SizedBox(height: 24),
+                  Column(
+                    children: [
+                      Text(
+                        'Amount: ₹${expense.amount}',
+                        style: TextStyle(
+                          color: const Color(0xFFCBFF41),
+                          fontSize: width * 0.05,
+                          fontWeight: FontWeight.w700,
+                          shadows: [
+                            Shadow(
+                              color:  Color(0xFFCBFF41).withOpacity(0.6),
+                              blurRadius: 12,
+                              offset: const Offset(0, 0),
+                            ),
+                          ],
                         ),
-                        TextButton.icon(
-                          onPressed: (){
-                            showDialog(
-                              context: context,
-                              builder: (context) => ConfirmationDialog(
-                                message: 'Are you sure you want to delete this expense?',
-                                onConfirm: () {
-                                  Navigator.pop(context); // Close the dialog
-                                  // ✅ Place your group creation logic here
-                                },
-                                onCancel: () {
-                                  Navigator.pop(context); // Just close the dialog
-                                },
-                              ),
-                            ); 
-                          },
-                          icon: Icon(Icons.delete, color: Colors.redAccent, size: width*0.04,),
-                          label: Text(
-                            'Delete',
-                            style: TextStyle(fontSize:width*0.04  ,color: Colors.redAccent),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          buildActionButton(
+                            context,
+                            icon: Icons.edit,
+                            label: 'Edit',
+                            color: const Color.fromARGB(255, 203, 255, 65),
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => ConfirmationDialog(
+                                  message: 'Are you sure you want to edit this expense?',
+                                  onConfirm: () {
+                                    // handle logic here 
+                                    Navigator.pop(context);
+                                    showCustomSnackBar(
+                                      context,
+                                      "Expense edited successfully",
+                                      backgroundColor: const Color.fromARGB(255, 129, 171, 13)
+                                    );
+                                  },
+                                  onCancel: () => Navigator.pop(context),
+                                ),
+                              );
+                            },
                           ),
-                        ),
-                      ],
-                    ),
-                    
-                  ],
-                ),
-              ],
+                          buildActionButton(
+                            context,
+                            icon: Icons.delete,
+                            label: 'Delete',
+                            color: const Color.fromARGB(255, 255, 82, 82),
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => ConfirmationDialog(
+                                  message: 'Are you sure you want to delete this expense?',
+                                  onConfirm: () {
+                                    onDelete(); // <-- callback trigger
+                                    showCustomSnackBar(
+                                      context,
+                                      "Expense deleted successfully",
+                                      backgroundColor: const Color.fromARGB(255, 189, 48, 48)
+                                    );
+                                  },
+                                  onCancel: () => Navigator.pop(context),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget buildLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  Widget buildText(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white70,
+        fontSize: 14,
+      ),
+    );
+  }
+
+  Widget buildList(List<String> data, double maxHeight) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: data.length > 4 ? maxHeight : double.infinity,
+      ),
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: data.length,
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            children: [
+              Icon(Icons.circle, color: Colors.white, size: 10),
+              const SizedBox(width: 8),
+              Text(data[index], style: const TextStyle(color: Colors.white70)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildActionButton(BuildContext context,
+      {required IconData icon,
+      required String label,
+      required Color color,
+      required VoidCallback onTap}) {
+    double width = MediaQuery.of(context).size.width;
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, color: color, size: width * 0.045),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: width * 0.043,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }

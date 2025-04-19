@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/sections/analysis_section.dart';
 import 'package:my_new_app/sections/create_group.dart';
 import 'package:my_new_app/sections/create_private_split.dart';
 import 'package:my_new_app/sections/join_group.dart';
@@ -206,14 +207,20 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 DashboardTileHor(
                   height: 150,
-                  title: "View Group\nAnalysis",
+                  title: "Track My\nMoney",
                   icon: Icons.show_chart,
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [Color.fromRGBO(106, 23, 169, 1), Color.fromRGBO(34, 2, 61, 1)],
                   ),
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AnalysisScreen()
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
