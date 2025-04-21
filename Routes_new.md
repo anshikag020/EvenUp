@@ -555,6 +555,37 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
+### 23. ADD EXPENSE
+**Route**: ```/api/add_expense```\
+**METHOD**: ```PUT```\
+**Description**: Used for adding an expense.\
+**Request body**:
+```json
+{  
+  "group_id": "string",
+  "username": "string",
+  "description": "string",
+  "amount": "float",
+  "tag": "string", // like: "Food", "Travel", "Entertainment", etc.
+  "split_between": [
+    "username_1" : "float",
+    "username_2" : "float"
+  ],
+  "paid_by": [
+    "username_1" : "float",
+    "username_2" : "float"
+  ],
+  "cookie"
+}
+```
+**Response**:
+```json
+{  
+  "status": "bool",         // like: true: Success, false: Failure
+  "message": "string"       // like: "Expense added successfully", "Group not found", "Some user has left the group"
+}
+```
+
 
 1. For sending emails, use ```SendGrid```.
 2. the flutter front end will know that the app has been backgrounded for more than 10 mins. So, it will send a request kind of thing to the server. and the server will close the connection. and then if the user opens the app after keeping it in background for 11 mins, then will flutter again send a request to open the web socket connection

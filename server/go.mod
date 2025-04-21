@@ -12,3 +12,5 @@ require (
 require golang.org/x/crypto v0.37.0
 
 require github.com/google/uuid v1.6.0
+
+require github.com/emirpasic/gods v1.18.1 // indirect
