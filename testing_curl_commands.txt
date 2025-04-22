@@ -166,7 +166,20 @@ curl -X DELETE http://localhost:8080/api/select_another_admin \
   "new_admin": "bob02"
 }'
 
+14. DELETE GROUP
+curl -X DELETE http://localhost:8080/api/delete_group \
+-H "Content-Type: application/json" \
+-d '{
+  "username": "alice01",
+  "group_id": "1ad139f5-abb6-4517-b41a-468ba380ed0b"
+}'
 
+curl -X DELETE http://localhost:8080/api/delete_group \
+-H "Content-Type: application/json" \
+-d '{
+  "username": "bob02",
+  "group_id": "1ad139f5-abb6-4517-b41a-468ba380ed0b"
+}'
 
 
 14. Add expense
