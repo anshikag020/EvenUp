@@ -167,3 +167,22 @@ curl -X DELETE http://localhost:8080/api/select_another_admin \
 }'
 
 
+
+
+14. Add expense
+curl -X PUT http://localhost:8080/api/add_expense \
+  -H "Content-Type: application/json" \
+  -d '{
+    "group_id": "319df869-8cd3-4045-bfe6-255af59c472a",
+    "username": "alice01",
+    "description": "Lunch",
+    "amount": 10.00,
+    "tag": "food",
+    "split_between": {
+      "alice01": 5,
+      "bob02": 5
+    },
+    "paid_by": {
+      "alice01": 10
+    }
+  }'

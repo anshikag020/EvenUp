@@ -9,6 +9,7 @@ import(
 	_ "github.com/lib/pq" // PostgreSQL driver
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	"encoding/json"
+	"github.com/anshikag020/EvenUp/ws_server/pubsub"
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/emirpasic/gods/utils"
 	"database/sql"
@@ -47,10 +48,6 @@ func mapTagToInt(tag string) int {
 	}
 }
 func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
-		return
-	}
 
 	var req AddExpenseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -213,6 +210,16 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		Status:  true,
 		Message: "Expense added successfully",
 	})
+
+	if WS != nil{
+		payload, _ := json.Marshal(map[string]interface{}{
+			"type": "expense_added",
+			"group_id": req.GroupID,
+			"by": req.Username,
+			"amount": req.Amount,
+		})
+		pubsub.NotifyExpense(WS, payload)
+	}
 }
 
 
