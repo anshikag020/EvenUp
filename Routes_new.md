@@ -555,6 +555,8 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
+
+// some more checks have to be done..look into the test plan
 ### 23. ADD EXPENSE
 **Route**: ```/api/add_expense```\
 **METHOD**: ```PUT```\

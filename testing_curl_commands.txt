@@ -190,7 +190,7 @@ curl -X PUT http://localhost:8080/api/add_expense \
     "username": "alice01",
     "description": "Lunch",
     "amount": 10.00,
-    "tag": "food",
+    "tag": "other",
     "split_between": {
       "alice01": 5,
       "bob02": 5

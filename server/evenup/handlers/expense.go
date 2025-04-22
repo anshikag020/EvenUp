@@ -13,6 +13,7 @@ import(
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/emirpasic/gods/utils"
 	"database/sql"
+	"errors"
 )
 
 type AddExpenseRequest struct {
@@ -47,10 +48,70 @@ func mapTagToInt(tag string) int {
 		return 5 // other
 	}
 }
+
+func Float64Comparator(a, b interface{}) int {
+	fa := a.(float64)
+	fb := b.(float64)
+
+	switch {
+	case fa < fb:
+		return -1
+	case fa > fb:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func autoDetectTag(description string) string {
+	desc := strings.ToLower(description)
+
+	tagKeywords := map[string][]string{
+		"food": {
+			"restaurant", "pizza", "lunch", "groceries", "grocery", "coffee", "snacks", "meal", "meals",
+			"food", "breakfast", "dinner", "kfc", "mcdonalds", "zomato", "swiggy", "cafeteria", "takeout",
+			"dominos", "chai", "thali", "dessert", "juice", "beverage", "bar", "pub", "canteen",
+		},
+		"transport": {
+			"uber", "ola", "taxi", "bus", "train", "metro", "fuel", "cab", "car", "bike", "auto",
+			"toll", "parking", "flight", "airfare", "transport", "fare", "gas", "petrol", "diesel", "ride",
+			"commute", "pass", "ticket", "carpool",
+		},
+		"entertainment": {
+			"movie", "cinema", "netflix", "hotstar", "prime", "party", "game", "games", "concert", "event",
+			"music", "theatre", "fun", "outing", "show", "match", "youtube", "spotify", "standup",
+			"amusement", "zoo", "park", "hangout", "sports", "fair", "exhibition",
+		},
+		"shopping": {
+			"clothes", "shoes", "shopping", "amazon", "flipkart", "purchase", "store", "mall", "order",
+			"bought", "dress", "jeans", "jacket", "kurti", "saree", "tshirt", "shirt", "bag", "makeup",
+			"cosmetics", "gift", "jewelry", "accessory", "watch", "phone", "mobile", "electronics",
+			"charger", "headphones", "tech", "appliance", "laptop", "stationery", "furniture",
+		},
+		"bills": {
+			"electricity", "water", "internet", "wifi", "recharge", "mobile", "bill", "rent", "emi",
+			"loan", "subscription", "payment", "postpaid", "prepaid", "broadband", "dues", "fees",
+			"gas bill", "maintenance", "housing", "net", "connection", "utilities", "tv", "dth",
+		},
+	}
+
+	for tag, keywords := range tagKeywords {
+		for _, keyword := range keywords {
+			if strings.Contains(desc, keyword) {
+				return tag
+			}
+		}
+	}
+	return "other"
+}
+
+
+
 func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req AddExpenseRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var err error
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, `{"status":false,"message":"Invalid request body"}`, http.StatusBadRequest)
 		return
 	}
@@ -83,7 +144,7 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	var groupExists bool
 	err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM groups WHERE group_id = $1)`, req.GroupID).Scan(&groupExists)
 	if err != nil || !groupExists {
-		tx.Rollback()
+		err = errors.New("group not found")
 		http.Error(w, `{"status":false,"message":"Group not found"}`, http.StatusNotFound)
 		return
 	}
@@ -107,7 +168,6 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	`, req.GroupID, pq.Array(userList))
 	if err != nil {
 		log.Println("Validation query error:", err)
-		tx.Rollback()
 		http.Error(w, `{"status":false,"message":"Internal server error"}`, http.StatusInternalServerError)
 		return
 	}
@@ -122,7 +182,6 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	for user := range userSet {
 		if !validUsers[user] {
-			tx.Rollback()
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(AddExpenseResponse{
 				Status:  false,
@@ -130,6 +189,11 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+	}
+
+	// Auto-detect tag if it's "other" or empty
+	if strings.ToLower(req.Tag) == "other" || strings.TrimSpace(req.Tag) == "" {
+		req.Tag = autoDetectTag(req.Description)
 	}
 
 	// Step 3: Insert the expense into the database
@@ -143,7 +207,6 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	`, req.GroupID, req.Description, tagInt, req.Username, req.Amount).Scan(&expenseID)
 	if err != nil {
 		log.Println("Error inserting expense:", err)
-		tx.Rollback()
 		http.Error(w, `{"status":false,"message":"Failed to add expense"}`, http.StatusInternalServerError)
 		return
 	}
@@ -155,7 +218,6 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	`)
 	if err != nil {
 		log.Println("Prepare failed:", err)
-		tx.Rollback()
 		http.Error(w, `{"status":false,"message":"Internal error"}`, http.StatusInternalServerError)
 		return
 	}
@@ -172,7 +234,6 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		_, err := stmt.Exec(expenseID, user, contrib, owed)
 		if err != nil {
 			log.Println("Insert bill_split failed:", err)
-			tx.Rollback()
 			http.Error(w, `{"status":false,"message":"Failed to insert bill_split"}`, http.StatusInternalServerError)
 			return
 		}
@@ -196,13 +257,7 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Final commit at the end of the function
-	err = tx.Commit()
-	if err != nil {
-		log.Println("Failed to commit transaction:", err)
-		http.Error(w, `{"status":false,"message":"Failed to commit transaction"}`, http.StatusInternalServerError)
-		return
-	}
+	
 
 	// Respond with success message
 	w.Header().Set("Content-Type", "application/json")
@@ -229,7 +284,7 @@ func OptimiseBalances(tx *sql.Tx, groupID string, netChanges map[string]float64)
 
 	// Step 1: Get all balances for the group
 	rows, err := tx.Query(`
-		SELECT from_user, to_user, amount
+		SELECT sender, receiver, amount
 		FROM balances
 		WHERE group_id = $1
 	`, groupID)
@@ -283,11 +338,11 @@ func OptimiseBalances(tx *sql.Tx, groupID string, netChanges map[string]float64)
 
 	// Custom comparator for descending order (reverse of ascending)
 	descendingComparator := func(a, b interface{}) int {
-		return utils.IntComparator(b, a) // reverse comparison
+		return utils.Float64Comparator(b, a) // reverse comparison
 	}
 
 	// Create TreeMaps for debtors and creditors
-	debtors := treemap.NewWith(utils.IntComparator)           // ascending order for debtors
+	debtors := treemap.NewWith(utils.Float64Comparator)           // ascending order for debtors
 	creditors := treemap.NewWith(descendingComparator) // descending order for creditors
 
 	// Fill debtors and creditors based on net balances
@@ -303,12 +358,12 @@ func OptimiseBalances(tx *sql.Tx, groupID string, netChanges map[string]float64)
 	for !creditors.Empty() && !debtors.Empty() {
 		// Get top creditor (most positive balance)
 		cKey, cVal := creditors.Min() // key: amount, val: username
-		creditAmount := cKey.(int)
+		creditAmount := cKey.(float64)
 		creditUser := cVal.(string)
 
 		// Get top debtor (most negative balance)
 		dKey, dVal := debtors.Min() // key: amount (negative), val: username
-		debitAmount := dKey.(int)
+		debitAmount := dKey.(float64)
 		debitUser := dVal.(string)
 
 		// Determine the amount to settle between the two
@@ -343,7 +398,7 @@ func OptimiseBalances(tx *sql.Tx, groupID string, netChanges map[string]float64)
 }
 
 // Helper function to get the minimum of two values
-func min(a, b int) int {
+func min(a, b float64) float64 {
 	if a < b {
 		return a
 	}
