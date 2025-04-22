@@ -1,6 +1,6 @@
 package pubsub
 
-import "github.com/anshikag040/EvenUp/ws_server/hub"
+import "github.com/anshikag020/EvenUp/ws_server/hub"
 
 // NotifyExpense broadcasts a new‐expense event.
 func NotifyExpense(h *hub.Hub, payload []byte) {

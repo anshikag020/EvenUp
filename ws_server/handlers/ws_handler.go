@@ -3,7 +3,7 @@ package handlers
 import (
     "net/http"
     "github.com/gorilla/websocket"
-    "github.com/anshikag040/EvenUp/ws_server/hub"
+    "github.com/anshikag020/EvenUp/ws_server/hub"
 )
 
 var upgrader = websocket.Upgrader{

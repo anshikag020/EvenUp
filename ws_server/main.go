@@ -5,9 +5,9 @@ import (
     "net/http"
     "os"
     "github.com/gorilla/mux"
-    "github.com/anshikag040/EvenUp/ws_server/config"
-    "github.com/anshikag040/EvenUp/ws_server/hub"
-    "github.com/anshikag040/EvenUp/ws_server/handlers"
+    "github.com/anshikag020/EvenUp/ws_server/config"
+    "github.com/anshikag020/EvenUp/ws_server/hub"
+    "github.com/anshikag020/EvenUp/ws_server/handlers"
 )
 
 func main() {
