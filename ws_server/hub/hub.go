@@ -34,17 +34,32 @@ func (h *Hub) Run() {
         case c := <-h.unregister:
             if _, ok := h.clients[c]; ok {
                 delete(h.clients, c)
-                close(c.send)
+                close(c.Send)
             }
         case msg := <-h.broadcast:
             for c := range h.clients {
                 select {
-                case c.send <- msg:
+                case c.Send <- msg:
                 default:
-                    close(c.send)
+                    close(c.Send)
                     delete(h.clients, c)
                 }
             }
         }
     }
+}
+
+// Register adds a client to the hub.
+func (h *Hub) Register(c *Client) {
+    h.register <- c
+}
+
+// Unregister removes a client from the hub.
+func (h *Hub) Unregister(c *Client) {
+    h.unregister <- c
+}
+
+// Broadcast sends a message to all clients.
+func (h *Hub) Broadcast(msg []byte) {
+    h.broadcast <- msg
 }

@@ -3,7 +3,7 @@ package main
 import (
     "log"
     "net/http"
-    "os"
+    //"os"
     "github.com/gorilla/mux"
     "github.com/anshikag020/EvenUp/ws_server/config"
     "github.com/anshikag020/EvenUp/ws_server/hub"

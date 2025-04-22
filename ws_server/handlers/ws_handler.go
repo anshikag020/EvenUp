@@ -17,9 +17,11 @@ func ServeWS(h *hub.Hub, w http.ResponseWriter, r *http.Request) {
     if err != nil {
         return
     }
-    client := hub.NewClient(h, conn)       // <— use the constructor
-    client.Hub.register <- client          // register with the hub
+    client := hub.NewClient(h, conn)
 
-    go client.WritePump()  // <— exported
-    go client.ReadPump()   // <— exported
+    // register via the exported method
+    h.Register(client)
+
+    go client.WritePump()
+    go client.ReadPump()
 }
