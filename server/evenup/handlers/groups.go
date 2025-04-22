@@ -520,3 +520,106 @@ func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 
+func DeleteGroup(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Parse request body
+	var req struct {
+		GroupID  string `json:"group_id"`
+		Username string `json:"username"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	groupUUID, err := uuid.Parse(req.GroupID)
+	if err != nil {
+		http.Error(w, "Invalid group_id format", http.StatusBadRequest)
+		return
+	}
+
+	// Begin transaction
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	// Check if group exists
+	var adminUser string
+	err = tx.QueryRow(`SELECT admin_username FROM groups WHERE group_id = $1`, groupUUID).Scan(&adminUser)
+	if err == sql.ErrNoRows {
+		json.NewEncoder(w).Encode(map[string]interface{}{ 
+			"status": false,
+			"message": "Group not found",
+		})
+		return
+	} else if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Only admin can delete
+	if adminUser != req.Username {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": false,
+			"message": "You are not admin",
+		})
+		return
+	}
+
+	// check all balances are settled up
+	var amt float64
+	err = tx.QueryRow(`
+		SELECT amount FROM balances 
+		WHERE group_id = $1 AND amount <> 0 LIMIT 1
+	`, groupUUID).Scan(&amt)
+	if err != sql.ErrNoRows {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": false,
+			"message": "All balances must be settled",
+		})
+		return
+	}
+
+	// Ensure no pending intermediate transactions
+	err = tx.QueryRow(`
+		SELECT amount FROM intermediate_transactions
+		WHERE group_id = $1 AND amount <> 0 AND confirmed = FALSE LIMIT 1
+	`, groupUUID).Scan(&amt)
+	if err != sql.ErrNoRows {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": false,
+			"message": "Pending transactions must be completed",
+		})
+		return
+	}
+
+	// Delete participants
+	if _, err := tx.Exec(`DELETE FROM group_participants WHERE group_id = $1`, groupUUID); err != nil {
+		http.Error(w, "Failed to remove participants", http.StatusInternalServerError)
+		return
+	}
+
+	// Delete the group record
+	if _, err := tx.Exec(`DELETE FROM groups WHERE group_id = $1`, groupUUID); err != nil {
+		http.Error(w, "Failed to delete group", http.StatusInternalServerError)
+		return
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		return
+	}
+
+	// Success response
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "Group deleted successfully",
+	})
+}
+
+

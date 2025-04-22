@@ -68,6 +68,7 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 	_, err = tx.Exec("INSERT INTO users (username, name, email, password) VALUES ($1, $2, $3, $4)",
 		req.Username, req.Name, req.Email, string(hashedPassword))
 	if err != nil {
+		log.Printf("Failed to insert user %q into users table: %v", req.Username, err)
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}

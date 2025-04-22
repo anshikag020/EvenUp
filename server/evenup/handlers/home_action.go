@@ -91,9 +91,10 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if groupType == 0 {
 		_, err = config.DB.Exec(
 			"INSERT INTO ots_group_participants (group_id, user_name) VALUES ($1, $2)",
-			groupID, req.Username, true,
+			groupID, req.Username,
 		)
 		if err != nil {
+			log.Println("Error inserting into ots_group_participants:", err)
 			http.Error(w, "Failed to add admin to OTS participants", http.StatusInternalServerError)
 			return
 		}
