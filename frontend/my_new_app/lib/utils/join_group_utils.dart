@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-Widget buildLabel(String text) => Align(
+Widget buildLabel(String text, Color color) => Align(
   alignment: Alignment.centerLeft,
   child: Text(
     text,
-    style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+    style: GoogleFonts.poppins(color: color, fontSize: 14),
   ),
 );
 
-Widget buildInputField(TextEditingController controller) {
+Widget buildInputField(TextEditingController controller, Color color) {
   return TextField(
     controller: controller,
-    style: const TextStyle(color: Colors.white),
+    style: TextStyle(color: color),
     decoration: InputDecoration(
       fillColor: Colors.black26,
       filled: true,

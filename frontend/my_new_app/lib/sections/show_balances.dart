@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/general_utils.dart';
 import '../locator.dart';
@@ -28,14 +29,14 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2D2D2D),
+        backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
         title: Text(
           "Balances",
-          style: GoogleFonts.poppins(fontSize: 22, color: Colors.white),
+          style: GoogleFonts.poppins(fontSize: 22, color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
       ),
       body: FutureBuilder<List<Balance>>(
         future: _balancesFuture,
@@ -50,10 +51,10 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
               ),
             );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No balances found.',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
               ),
             );
           } else {
@@ -73,14 +74,15 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2C2C2C),
+                        // color: const Color(0xFF2C2C2C),
+                        color:   Theme.of(context).brightness ==  Brightness.dark ?  AppColors.box2Dark: AppColors.box2Light,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
                         children: [
                           Text(
                             "${balance.user1} owes ${balance.user2} ₹${balance.amount}",
-                            style: GoogleFonts.poppins(color: Colors.white),
+                            style: GoogleFonts.poppins(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                           ),
                           const SizedBox(height: 12),
                           if (isUser1)

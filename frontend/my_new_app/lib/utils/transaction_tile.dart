@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 
 class FancyTransactionTile extends StatelessWidget {
   final String groupName;
@@ -20,11 +21,7 @@ class FancyTransactionTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2D2D2D), Color(0xFF1A1A1A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.tileGradDark : AppColors.tileGradLight,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -32,7 +29,7 @@ class FancyTransactionTile extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             groupName,
-            style: TextStyle(color: Colors.white, fontSize: 20),
+            style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 20),
             textAlign: TextAlign.center,
           ),
           // Top Row
@@ -47,7 +44,7 @@ class FancyTransactionTile extends StatelessWidget {
                 Text(
                   (type == '1') ?  
                   "Paid by:": "Paid to:" , 
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 16),
                 ),
                 Text(
                   name,
@@ -81,7 +78,7 @@ class FancyTransactionTile extends StatelessWidget {
               children: [
                 Text(
                   "Amount:",
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 16),
+                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 16),
                 ),
                 Text(
                   "₹ $amount",

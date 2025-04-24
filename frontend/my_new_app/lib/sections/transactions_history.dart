@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/models/transaction_history_model.dart';
 import 'package:my_new_app/services/service%20interfaces/transaction_history_service_interface.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/transaction_tile.dart';
 
 class TransactionsHistoryScreen extends StatefulWidget {
@@ -52,14 +53,14 @@ class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
           "Transactions History",
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
         ),
-        backgroundColor: const Color(0xFF2D2D2D),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
+        iconTheme: IconThemeData(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
@@ -69,13 +70,13 @@ class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                 decoration: InputDecoration(
                   hintText: 'Search transactions...',
-                  hintStyle: const TextStyle(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                  hintStyle: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
+                  prefixIcon: Icon(Icons.search, color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
                   filled: true,
-                  fillColor: const Color(0xFF1E1E1E),
+                  fillColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.searchBoxDark : AppColors.searchBoxLight,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),

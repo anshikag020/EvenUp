@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 
-Widget buildLabel(String text) => Align(
+Widget buildLabel(String text, BuildContext context) => Align(
   alignment: Alignment.centerLeft,
   child: Text(
     text,
-    style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
+    style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 14),
   ),
 );
 
-Widget buildInputField(TextEditingController controller) {
+Widget buildInputField(TextEditingController controller, BuildContext context) {
   return TextField(
     controller: controller,
-    style: const TextStyle(color: Colors.white),
+    style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
     decoration: InputDecoration(
       fillColor: Colors.black26,
       filled: true,
@@ -21,11 +22,11 @@ Widget buildInputField(TextEditingController controller) {
   );
 }
 
-Widget buildDescriptionField(TextEditingController controller) {
+Widget buildDescriptionField(TextEditingController controller, BuildContext context) {
   return TextField(
     controller: controller,
     maxLines: 4,
-    style: const TextStyle(color: Colors.white),
+    style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
     decoration: InputDecoration(
       fillColor: Colors.black26,
       filled: true,
@@ -38,6 +39,7 @@ Widget buildRadio({
   required String value,
   required String groupValue,
   required void Function(String) onChanged,
+  required BuildContext context
 }) {
   return Container(
     margin: const EdgeInsets.symmetric(vertical: 4),
@@ -49,8 +51,8 @@ Widget buildRadio({
       value: value,
       groupValue: groupValue,
       onChanged: (val) => onChanged(val!),
-      activeColor: Colors.white,
-      title: Text(value, style: GoogleFonts.poppins(color: Colors.white)),
+      activeColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
+      title: Text(value, style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,)),
     ),
   );
 }

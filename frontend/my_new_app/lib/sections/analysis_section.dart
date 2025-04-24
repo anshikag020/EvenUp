@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/analysis_section_utils.dart';
 
 class AnalysisScreen extends StatefulWidget {
@@ -10,11 +11,12 @@ class AnalysisScreen extends StatefulWidget {
   @override
   State<AnalysisScreen> createState() => _AnalysisScreenState();
 }
-
+ 
 class _AnalysisScreenState extends State<AnalysisScreen> {
   final ScrollController _scrollController = ScrollController();
+  late final GroupService _groupService;
 
-  List<String> groupOptions = ['Family', 'Friends', 'Work', 'Demo Group 1', 'Demo Group 2', 'Demo Group 3', 'Demo Group 4'];
+  List<String> groupOptions = [];  
   final List<String> categoryOptions = ['Food', 'Travel', 'Shopping', 'Bills'];
   final List<String> timeOptions = [
     '1 Week',
@@ -25,7 +27,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     'All Time'
   ];
 
-  late final GroupService _groupService;
   List<String> selectedGroups = [];
   List<String> selectedCategories = [];
   String selectedTime = 'All Time';
@@ -68,14 +69,15 @@ Future<void> loadGroupOptions() async {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width; 
     final poppins = GoogleFonts.poppins;
+    Color textcolor = Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight; 
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text("Track My Money", style: poppins(color: Colors.white)),
+        backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
+        title: Text("Track My Money", style: poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight)),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
       ),
       body: SingleChildScrollView(
         controller: _scrollController,
@@ -84,7 +86,7 @@ Future<void> loadGroupOptions() async {
   children: [
     Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(20),
@@ -95,12 +97,12 @@ Future<void> loadGroupOptions() async {
             'Analysis Options',
             style: poppins(
               fontSize: 18,
-              color: Colors.white,
+              color: textcolor,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 10),
-          const Divider(color: Colors.grey),
+          Divider(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
           const SizedBox(height: 24),
 
           /// Groups
@@ -141,11 +143,12 @@ Future<void> loadGroupOptions() async {
                 selectedTime = val!;
               });
             },
+            context: context, 
           ),
           const SizedBox(height: 20),
 
           /// Type
-          Text("Type:", style: poppins(color: Colors.white)),
+          Text("Type:", style: poppins(color: textcolor)),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -153,12 +156,18 @@ Future<void> loadGroupOptions() async {
                 title: "Spent",
                 groupValue: selectedType,
                 onChanged: (val) => setState(() => selectedType = val),
+                selectColor:   Theme.of(context).brightness ==  Brightness.dark ? Colors.greenAccent :  Color.fromARGB(255, 5, 129, 36),
+                textcolor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight
+
               ),
               const SizedBox(width: 16),
               AnalysisWidgets.buildRadio(
                 title: "Received",
                 groupValue: selectedType,
                 onChanged: (val) => setState(() => selectedType = val),
+                selectColor: Theme.of(context).brightness ==  Brightness.dark ? Colors.greenAccent : Color.fromARGB(255, 5, 129, 36),
+                textcolor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight
+
               ),
             ],
           ),
@@ -169,6 +178,7 @@ Future<void> loadGroupOptions() async {
             child: ElevatedButton(
                     onPressed: () {
                                       // handle this function
+                    _scrollToBottom(); 
                                   },
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.zero,
@@ -180,11 +190,7 @@ Future<void> loadGroupOptions() async {
                     ),
                     child: Ink(
                       decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [Color.fromRGBO(208, 227, 64, 1), Color.fromRGBO(28, 54, 6, 1)],
-                                  ),
+                                    gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Container(
@@ -208,12 +214,12 @@ Future<void> loadGroupOptions() async {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
         'You can see the analysis here',
-        style: poppins(color: Colors.white70, fontSize: 16),
+        style: poppins(color: textcolor, fontSize: 16),
       ),
     ),
     const SizedBox(height: 60),

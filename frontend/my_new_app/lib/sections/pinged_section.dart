@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/models/pinged_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/pinged_section_service_interface.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/pinged_section_utils.dart';
 
 class PingedScreen extends StatefulWidget {
@@ -53,8 +54,9 @@ class _PingedScreenState extends State<PingedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         toolbarHeight: 80,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -64,7 +66,7 @@ class _PingedScreenState extends State<PingedScreen> {
           child: Text(
             'Pinged',
             style: GoogleFonts.poppins(
-              color: Colors.white,
+              color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
               fontSize: 35,
               fontWeight: FontWeight.w600,
             ),
@@ -77,13 +79,13 @@ class _PingedScreenState extends State<PingedScreen> {
           children: [
             TextField(
               controller: _searchController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
               decoration: InputDecoration(
                 hintText: 'Search by username...',
-                hintStyle: const TextStyle(color: Colors.white54),
-                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                hintStyle: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
+                prefixIcon: Icon(Icons.search, color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
                 filled: true,
-                fillColor: const Color(0xFF1E1E1E),
+                fillColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.searchBoxDark : AppColors.searchBoxLight,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
@@ -112,12 +114,12 @@ class _PingedScreenState extends State<PingedScreen> {
                             },
                           );
                         } else {
-                          return const Padding(
+                          return Padding(
                             padding: EdgeInsets.symmetric(vertical: 16.0),
                             child: Center(
                               child: Text(
                                 'No more pinged transactions',
-                                style: TextStyle(color: Colors.white60),
+                                style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
                               ),
                             ),
                           );
@@ -128,7 +130,7 @@ class _PingedScreenState extends State<PingedScreen> {
                       child: Text(
                         "No matching results",
                         style: GoogleFonts.poppins(
-                          color: Colors.white54,
+                          color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight,
                           fontSize: 14,
                         ),
                       ),

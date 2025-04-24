@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 
 class PingCard extends StatelessWidget {
@@ -24,7 +25,7 @@ class PingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     return Card(
-      color: const Color(0xFF1E1E1E),
+      color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.searchBoxDark : AppColors.searchBoxLight,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.symmetric(vertical: 5),
       child: Padding(
@@ -38,7 +39,8 @@ class PingCard extends StatelessWidget {
               child: Text(
                 'Group: $groupName',
                 style: GoogleFonts.poppins(
-                  color: const Color.fromARGB(255, 151, 151, 151),
+                  // color: const Color.fromARGB(255, 151, 151, 151),
+                  color: Theme.of(context).brightness ==  Brightness.dark ? Color.fromARGB(255, 151, 151, 151) : const Color.fromARGB(255, 80, 79, 79),
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
@@ -50,16 +52,16 @@ class PingCard extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   amount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
                   ),
@@ -77,14 +79,7 @@ class PingCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                     child: Ink(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromRGBO(208, 227, 64, 1),
-                            Color.fromRGBO(28, 54, 6, 1),
-                          ],
-                        ),
+                        gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: InkWell(
@@ -129,14 +124,7 @@ class PingCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                     child: Ink(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromRGBO(255, 71, 139, 1),
-                            Color.fromRGBO(58, 11, 30, 1),
-                          ],
-                        ),
+                        gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: InkWell(

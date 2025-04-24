@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 // import 'package:my_new_app/services/service_interfaces/groups_section_service_interface.dart';
 
 class GroupUtils {
@@ -18,7 +19,7 @@ class GroupUtils {
       context: context,
       builder: (context) {
         return Dialog(
-          backgroundColor: const Color(0xFF1E1E1E),
+          backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.searchBoxDark : AppColors.searchBoxLight,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           child: Container(
             constraints: const BoxConstraints(
@@ -28,23 +29,23 @@ class GroupUtils {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   "All Group Members",
                   style: TextStyle(
                     fontSize: 20,
-                    color: Colors.white,
+                    color:  Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const Divider(
-                  color: Colors.white24,
+                Divider(
+                  color:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white24 : AppColors.textLight,
                   thickness: 1,
                   height: 20,
                 ),
                 Flexible( // 👈 Use Flexible to allow ListView to take available space
                   child: Scrollbar(
-                    controller: scrollController,
                     thumbVisibility: true,
+                    controller: scrollController,
                     trackVisibility: true,
                     radius: const Radius.circular(10),
                     thickness: 4,
@@ -56,13 +57,13 @@ class GroupUtils {
                           padding: const EdgeInsets.symmetric(vertical: 9),
                           child: Row(
                             children: [
-                              const Icon(Icons.circle_outlined,
-                                  color: Colors.white, size: 16),
+                              Icon(Icons.circle_outlined,
+                                  color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight , size: 16),
                               const SizedBox(width: 8),
                               Text(
                                 members[index].name,
-                                style: const TextStyle(
-                                  color: Color.fromARGB(255, 189, 189, 189),
+                                style: TextStyle(
+                                  color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                                   fontSize: 18,
                                 ),
                               ),

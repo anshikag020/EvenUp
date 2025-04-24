@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
+import 'package:my_new_app/theme/app_colors.dart';
+import 'package:my_new_app/utils/general_utils.dart';
 
 class PaidByDialog extends StatefulWidget {
   final List<GroupMemberModel> members;
+  final Map<String, double>? initialPaidBy;
 
-  PaidByDialog({required this.members});
+  PaidByDialog({
+    required this.members,
+    this.initialPaidBy,
+  });
+
 
   @override
   _PaidByDialogState createState() => _PaidByDialogState();
@@ -20,7 +27,9 @@ class _PaidByDialogState extends State<PaidByDialog> {
     super.initState();
     filteredMembers = widget.members;
     for (var member in widget.members) {
-      controllers[member.name] = TextEditingController();
+      controllers[member.name] = TextEditingController(
+        text: widget.initialPaidBy?[member.name]?.toStringAsFixed(2) ?? '',
+      );
     }
     searchController.addListener(_filterMembers);
   }
@@ -54,7 +63,7 @@ class _PaidByDialogState extends State<PaidByDialog> {
     double width = MediaQuery.of(context).size.width; 
 
     return Dialog(
-      backgroundColor: const Color(0xFF1C1C1C),
+      backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.box3Dark : AppColors.box3Light,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -63,17 +72,17 @@ class _PaidByDialogState extends State<PaidByDialog> {
           children: [
             Text(
               'Select Members Who Paid',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+              style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 16),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: searchController,
               decoration: InputDecoration(
-                labelStyle: TextStyle(color: const Color.fromARGB(255, 144, 144, 144)),
+                labelStyle: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight2),
                 labelText: 'Search Members',
-                prefixIcon: Icon(Icons.search, color: const Color.fromARGB(255, 144, 144, 144),),
+                prefixIcon: Icon(Icons.search, color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight2),
                 filled: true,
-                fillColor: Colors.white10,
+                fillColor:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white10 : const Color.fromARGB(255, 173, 173, 173),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -93,7 +102,7 @@ class _PaidByDialogState extends State<PaidByDialog> {
                         Expanded(
                           child: Text(
                             member.name,
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                           ),
                         ),
                         SizedBox(
@@ -104,10 +113,10 @@ class _PaidByDialogState extends State<PaidByDialog> {
                             keyboardType: TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                             decoration: InputDecoration(
                               hintText: 'Amount',
-                              hintStyle: TextStyle(color: Colors.white38),
+                              hintStyle: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white38 : AppColors.textLight),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 10,
                                 vertical: 8,
@@ -139,14 +148,7 @@ class _PaidByDialogState extends State<PaidByDialog> {
                   onPressed: _confirmSelection,
                   child: Ink(
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromRGBO(208, 227, 64, 1),
-                            Color.fromRGBO(28, 54, 6, 1),
-                          ],
-                        ),
+                              gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme, 
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Container(
@@ -171,14 +173,7 @@ class _PaidByDialogState extends State<PaidByDialog> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Ink(
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromRGBO(255, 71, 139, 1),
-                            Color.fromRGBO(58, 11, 30, 1),
-                          ],
-                        ),
+                              gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Container(
@@ -259,7 +254,7 @@ class _SplitBetweenDialogState extends State<SplitBetweenDialog> {
     double width = MediaQuery.of(context).size.width;
 
     return Dialog(
-      backgroundColor: const Color(0xFF1C1C1C),
+      backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.box3Dark : AppColors.box3Light,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -268,18 +263,18 @@ class _SplitBetweenDialogState extends State<SplitBetweenDialog> {
           children: [
             Text(
               'Select Members to Split Between',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: searchController,
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
               decoration: InputDecoration(
                 hintText: 'Search Members',
-                hintStyle: TextStyle(color: Colors.white54),
-                prefixIcon: Icon(Icons.search, color: Colors.white),
+                hintStyle: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white54 : AppColors.textLight2),
+                prefixIcon: Icon(Icons.search, color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                 filled: true,
-                fillColor: Colors.white12,
+                fillColor:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white12 : const Color.fromARGB(255, 167, 167, 167),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
@@ -298,7 +293,7 @@ class _SplitBetweenDialogState extends State<SplitBetweenDialog> {
                     return CheckboxListTile(
                       title: Text(
                         member.name,
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                       ),
                       activeColor: Colors.green,
                       checkColor: Colors.black,
@@ -332,14 +327,7 @@ class _SplitBetweenDialogState extends State<SplitBetweenDialog> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Ink(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color.fromRGBO(255, 71, 139, 1),
-                          Color.fromRGBO(58, 11, 30, 1),
-                        ],
-                      ),
+                      gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Container(
@@ -363,14 +351,7 @@ class _SplitBetweenDialogState extends State<SplitBetweenDialog> {
                   onPressed: _confirmSelection,
                   child: Ink(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color.fromRGBO(208, 227, 64, 1),
-                          Color.fromRGBO(28, 54, 6, 1),
-                        ],
-                      ),
+                      gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Container(
@@ -403,6 +384,7 @@ class SplitTypeDialog extends StatefulWidget {
   final double totalAmount;
   final String? initialSplitType;
   final Map<String, double>? initialSplitDetails;
+  late final BuildContext parentContext; 
   
   SplitTypeDialog({
   required this.members,
@@ -410,6 +392,7 @@ class SplitTypeDialog extends StatefulWidget {
   required this.totalAmount,
   this.initialSplitType,
   this.initialSplitDetails,
+  required this.parentContext,
 });
 
   @override
@@ -421,26 +404,34 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
   Map<String, TextEditingController> controllers = {};
   late ScrollController _scrollController;
 
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
 
-    splitType = widget.initialSplitType ?? 'Evenly';
+    final validTypes = ['Evenly', 'Unevenly', 'By Percentage'];
+    splitType = validTypes.contains(widget.initialSplitType)
+        ? widget.initialSplitType!
+        : 'Evenly';
 
     for (var name in widget.selectedMembers) {
       controllers[name] = TextEditingController();
-      if (widget.initialSplitDetails != null && widget.initialSplitDetails!.containsKey(name)) {
-        controllers[name]!.text = widget.initialSplitType == 'By Percentage'
+
+      if (widget.initialSplitDetails != null &&
+          widget.initialSplitDetails!.containsKey(name)) {
+        controllers[name]!.text = splitType == 'By Percentage'
             ? widget.initialSplitDetails![name]!.toStringAsFixed(0)
             : widget.initialSplitDetails![name]!.toStringAsFixed(2);
       }
     }
 
-    if (splitType == 'Evenly' && widget.initialSplitDetails == null) {
+    if (splitType == 'Evenly' &&
+        (widget.initialSplitDetails == null || widget.initialSplitDetails!.isEmpty)) {
       _setEvenSplit();
     }
   }
+
 
   @override
   void dispose() {
@@ -495,12 +486,12 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
     }
 
     if (splitType == 'Evenly' || splitType == 'Unevenly') {
-      if ((total - widget.totalAmount).abs() > 0.01) {
+      if ((total - widget.totalAmount).abs() >= 1) {
         _showError('The split total does not match the expense amount.');
         return;
       }
     } else if (splitType == 'By Percentage') {
-      if ((total - 100).abs() > 0.01) {
+      if ((total - 100).abs() >= 1) {
         _showError('Total percentage must equal 100%.');
         return;
       }
@@ -517,9 +508,13 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+
+    // showCustomSnackBar(widget.parentContext, message);
+    showOverlayNotification(widget.parentContext, message);
+ 
+    // ScaffoldMessenger.of(
+      // widget.parentContext,
+    // ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -527,7 +522,7 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
     double width = MediaQuery.of(context).size.width;
 
     return Dialog(
-      backgroundColor: const Color(0xFF1C1C1C),
+      backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.box3Dark : AppColors.box3Light,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -536,12 +531,12 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
           children: [
             Text(
               'Choose Split Type',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: splitType,
-              dropdownColor: Colors.black87,
+              dropdownColor:   Theme.of(context).brightness ==  Brightness.dark ? Colors.black87 : const Color.fromARGB(255, 189, 189, 189),
               items: [
                 DropdownMenuItem(value: 'Evenly', child: Text('Split Evenly')),
                 DropdownMenuItem(value: 'Unevenly', child: Text('Split Unevenly')),
@@ -550,10 +545,10 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
               onChanged: _onTypeChange,
               decoration: InputDecoration(
                 labelText: 'Split Type',
-                labelStyle: TextStyle(color: Colors.white70),
+                labelStyle: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? Colors.white70 : Colors.black),
                 border: OutlineInputBorder(),
               ),
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : const Color.fromARGB(255, 75, 75, 75)),
             ),
             SizedBox(height: 20),
             SizedBox(
@@ -573,7 +568,7 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
                           Expanded(
                             child: Text(
                               name,
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                             ),
                           ),
                           SizedBox(
@@ -582,10 +577,10 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
                               controller: controllers[name],
                               enabled: splitType != 'Evenly',
                               keyboardType: TextInputType.numberWithOptions(decimal: true),
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                               decoration: InputDecoration(
                                 hintText: splitType == 'By Percentage' ? '%' : '₹',
-                                hintStyle: TextStyle(color: Colors.white38),
+                                hintStyle: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white38 : AppColors.textLight2),
                                 border: OutlineInputBorder(),
                                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                 isDense: true,
@@ -615,14 +610,7 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
                   onPressed: _confirmSplit,
                   child: Ink(
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromRGBO(208, 227, 64, 1),
-                            Color.fromRGBO(28, 54, 6, 1),
-                          ],
-                        ),
+                              gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme,
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Container(
@@ -647,14 +635,7 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Ink(
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromRGBO(255, 71, 139, 1),
-                            Color.fromRGBO(58, 11, 30, 1),
-                          ],
-                        ),
+                              gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Container(

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/all_expenses_utils.dart';
 import '../sections/expense_detailed_box.dart';
 
@@ -25,7 +26,6 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
   void initState() {
     super.initState();
     _expenseService = locator<ExpenseService>();
-
     _loadExpenses();
   }
 
@@ -60,14 +60,27 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
           "Expenses",
-          style: GoogleFonts.poppins(fontSize: 24, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textDark
+                : AppColors.textLight,
+          ),
         ),
-        backgroundColor: const Color(0xFF121212),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.appBarColorDark
+            : AppColors.appBarColorLight,
+        iconTheme: IconThemeData(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.textDark
+              : AppColors.textLight,
+        ),
         elevation: 0,
       ),
       body: SafeArea(
@@ -75,22 +88,34 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
+                  const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2C2C2C),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.searchBoxDark
+                            : AppColors.searchBoxLight,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: TextField(
                         style: const TextStyle(color: Colors.white),
                         onChanged: _filterExpenses,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: "Search...",
-                          hintStyle: TextStyle(color: Colors.white54),
+                          hintStyle: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.textDark2
+                                : AppColors.textLight,
+                          ),
                           border: InputBorder.none,
-                          suffixIcon: Icon(Icons.search, color: Colors.yellow),
+                          suffixIcon: Icon(
+                            Icons.search,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.yellow
+                                : const Color.fromARGB(255, 201, 255, 7),
+                          ),
                         ),
                       ),
                     ),
@@ -102,9 +127,44 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                       thumbVisibility: true,
                       child: ListView.builder(
                         controller: _scrollController,
-                        itemCount: filteredExpenses.length,
+                        itemCount: filteredExpenses.isEmpty
+                            ? 1
+                            : filteredExpenses.length + 1,
                         padding: const EdgeInsets.symmetric(horizontal: 25),
                         itemBuilder: (context, index) {
+                          if (filteredExpenses.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 100),
+                                child: Text(
+                                  "No matching expenses found",
+                                  style: GoogleFonts.poppins(
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? AppColors.textDark
+                                        : AppColors.textLight,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          if (index == filteredExpenses.length) {
+                            return Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Text(
+                                "Group has no more expenses",
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textDark
+                                      : AppColors.textLight,
+                                ),
+                              ),
+                            );
+                          }
+
                           final item = filteredExpenses[index];
                           return ExpenseTile(
                             description: item.description,
@@ -123,15 +183,6 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                           );
                         },
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Text(
-                      filteredExpenses.isEmpty
-                          ? "No matching expenses found"
-                          : "Group has no more expenses",
-                      style: GoogleFonts.poppins(color: Colors.white70),
                     ),
                   ),
                 ],

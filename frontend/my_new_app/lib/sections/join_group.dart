@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/general_utils.dart';
 import 'package:my_new_app/utils/join_group_utils.dart';
@@ -17,7 +18,7 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF1C1C1C),
+      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 25),
@@ -28,16 +29,16 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
               "Join Group",
               style: GoogleFonts.poppins(
                 fontSize: 18,
-                color: Colors.white,
+                color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const Divider(color: Colors.white30),
+            Divider(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
 
             const SizedBox(height: 15),
-            buildLabel("Invite Code"),
+            buildLabel("Invite Code", Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
             const SizedBox(height: 8),
-            buildInputField(_inviteCodeController),
+            buildInputField(_inviteCodeController, Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight ),
 
             const SizedBox(height: 20),
             Row(
@@ -45,14 +46,7 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
               children: [
                 buildActionButton(
                   "Join",
-                  LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.fromRGBO(208, 227, 64, 1),
-                      Color.fromRGBO(28, 54, 6, 1),
-                    ],
-                  ),
+                  Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme,
                   () {
                     // Navigator.pop(context);
                     showDialog(
@@ -78,14 +72,7 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
                 ),
                 buildActionButton(
                   "Cancel",
-                  LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.fromRGBO(255, 71, 139, 1),
-                      Color.fromRGBO(58, 11, 30, 1),
-                    ],
-                  ),
+                  Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
                   () {
                     Navigator.pop(context);
                   },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 
 class ConfirmationDialog extends StatelessWidget {
   final String message;
@@ -15,7 +16,8 @@ class ConfirmationDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width; 
     return Dialog(
-      backgroundColor: const Color.fromARGB(255, 27, 27, 27),
+      // backgroundColor: const Color(0xFF1B1B1B),
+      backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? Color(0XFF1B1B1B) : AppColors.box2Light,
       insetPadding: const EdgeInsets.all(24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SingleChildScrollView(
@@ -30,7 +32,7 @@ class ConfirmationDialog extends StatelessWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.white),
+                style: TextStyle(fontSize: 18, color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
               ),
               const SizedBox(height: 24),
               Row(
@@ -52,11 +54,7 @@ class ConfirmationDialog extends StatelessWidget {
                     ),
                     child: Ink(
                       decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [Color.fromRGBO(208, 227, 64, 1), Color.fromRGBO(28, 54, 6, 1)],
-                                  ),
+                                    gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Container(
@@ -94,11 +92,7 @@ class ConfirmationDialog extends StatelessWidget {
                     ),
                     child: Ink(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [Color.fromRGBO(255, 71, 139, 1), Color.fromRGBO(58, 11, 30, 1)],
-                                      ),
+                        gradient:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Container(

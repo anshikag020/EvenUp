@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/groups_utils.dart';
 
 class GroupsScreen extends StatefulWidget {
@@ -53,7 +54,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: SafeArea(
         child: Column(
           children: [
@@ -63,7 +64,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textDark: AppColors.textLight,
               ),
             ),
             const SizedBox(height: 20),
@@ -71,13 +72,14 @@ class _GroupsScreenState extends State<GroupsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                 decoration: InputDecoration(
                   hintText: 'Search groups...',
                   hintStyle: const TextStyle(color: Colors.white54),
                   prefixIcon: const Icon(Icons.search, color: Colors.white54),
                   filled: true,
-                  fillColor: const Color(0xFF1E1E1E),
+                  // fillColor: const Color(0xFF1E1E1E),
+                  fillColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.searchBoxDark : const Color.fromARGB(255, 179, 179, 179),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                   border: OutlineInputBorder(
@@ -94,7 +96,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       child: Text(
                         "No groups found.",
                         style: GoogleFonts.poppins(
-                          color: const Color.fromARGB(137, 253, 113, 113),
+                          color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                           fontSize: 16,
                         ),
                       ),
@@ -112,6 +114,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                             description: group.description,
                             inviteCode: group.inviteCode,
                             groupType: group.groupType,
+                            gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.groupBoxDark : AppColors.groupBoxLight,
                           );
                         } else {
                           return Padding(
@@ -121,7 +124,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                                 "You don’t have any more groups.",
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
-                                  color: Colors.white60,
+                                  color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                                 ),
                               ),
                             ),

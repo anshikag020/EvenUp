@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/general_utils.dart';
 
@@ -20,6 +21,11 @@ class ExpenseDetailDialog extends StatelessWidget {
     double width = MediaQuery.of(context).size.width;
     const double maxListHeight = 100.0;
     final service = GetIt.instance<DetailedExpenseService>();
+
+    Color textDarkColor =   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight; 
+
+    Color textLightColor =   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight2; 
+
 
     return FutureBuilder<DetailedExpenseModel>(
       future: service.fetchExpenseById(expenseID),
@@ -48,19 +54,13 @@ class ExpenseDetailDialog extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              // boxShadow: [
-              //   BoxShadow(
-              //     color:  Color(0xFFCBFF41).withOpacity(0.6),
-              //     spreadRadius:1,
-              //     blurRadius: 15,
-              //   ),
-              // ],
             ),
             child: Container(
               margin: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(22),
-                color:  Color(0xFF1E1E1E).withOpacity(0.95),
+                // color:  Color(0xFF1E1E1E).withOpacity(0.95),
+                color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.searchBoxDark : AppColors.searchBoxLight,
               ),
               padding: EdgeInsets.all(width * 0.045),
               child: Column(
@@ -71,18 +71,18 @@ class ExpenseDetailDialog extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          buildLabel('Description:'),
-                          buildText(expense.description),
+                          buildLabel('Description:', textDarkColor),
+                          buildText(expense.description, textLightColor),
                           const SizedBox(height: 16),
-                          buildLabel('Paid by:'),
-                          buildList(expense.paidBy, maxListHeight),
+                          buildLabel('Paid by:', textDarkColor),
+                          buildList(expense.paidBy, maxListHeight, textLightColor),
                           const SizedBox(height: 16),
-                          buildLabel('Owed by:'),
-                          buildList(expense.owedBy, maxListHeight),
+                          buildLabel('Owed by:', textDarkColor),
+                          buildList(expense.owedBy, maxListHeight, textLightColor),
                           const SizedBox(height: 24),
                           Text(
                             'Last Updated by: ${expense.lastUpdatedBy}',
-                            style: const TextStyle(color: Colors.white54),
+                            style: TextStyle(color: textDarkColor ),
                           ),
                         ],
                       ),
@@ -170,28 +170,28 @@ class ExpenseDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget buildLabel(String label) {
+  Widget buildLabel(String label, Color color) {
     return Text(
       label,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: color,
         fontSize: 16,
         fontWeight: FontWeight.w600,
       ),
     );
   }
 
-  Widget buildText(String text) {
+  Widget buildText(String text, Color color) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Colors.white70,
+      style: TextStyle(
+        color: color,
         fontSize: 14,
       ),
     );
   }
 
-  Widget buildList(List<String> data, double maxHeight) {
+  Widget buildList(List<String> data, double maxHeight, Color color) {
     return Container(
       constraints: BoxConstraints(
         maxHeight: data.length > 4 ? maxHeight : double.infinity,
@@ -203,9 +203,9 @@ class ExpenseDetailDialog extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 4.0),
           child: Row(
             children: [
-              Icon(Icons.circle, color: Colors.white, size: 10),
+              Icon(Icons.circle, color: color, size: 10),
               const SizedBox(width: 8),
-              Text(data[index], style: const TextStyle(color: Colors.white70)),
+              Text(data[index], style: TextStyle(color: color)),
             ],
           ),
         ),

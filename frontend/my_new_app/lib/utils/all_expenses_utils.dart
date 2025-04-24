@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 
 class ExpenseTile extends StatelessWidget {
   final String description;
@@ -21,11 +22,7 @@ class ExpenseTile extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 12.0),
         child: Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2D2D2D), Color(0xFF1A1A1A)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.tileGradDark : AppColors.tileGradLight,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -44,7 +41,7 @@ class ExpenseTile extends StatelessWidget {
                     Text(
                       "Expense Description:",
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -55,7 +52,7 @@ class ExpenseTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
-                        color: Colors.white70,
+                        color: Theme.of(context).brightness ==  Brightness.dark ? Colors.white70 : AppColors.textLight,
                         fontSize: 14,
                       ),
                     ),
@@ -63,8 +60,8 @@ class ExpenseTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 15),
-              const Divider(
-                color: Colors.white24,
+              Divider(
+                color: Theme.of(context).brightness ==  Brightness.dark ? Colors.white24 : Colors.white,
                 height: 1,
                 thickness: 1,
                 indent: 12,
@@ -83,7 +80,7 @@ class ExpenseTile extends StatelessWidget {
                     Text(
                       "Amount:",
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                         fontSize: 16,
                       ),
                     ),

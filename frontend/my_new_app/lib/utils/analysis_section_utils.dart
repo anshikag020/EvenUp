@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 
 class AnalysisWidgets {
   static final _font = GoogleFonts.poppins;
@@ -12,29 +13,30 @@ class AnalysisWidgets {
     required List<String> initialValue,
     required void Function(List<String>) onConfirm,
   }) {
+    Color textcolor = Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: _font(color: Colors.white70)),
+        Text(label, style: _font(color: textcolor)),
         const SizedBox(height: 6),
         MultiSelectDialogField<String>(
           items: items.map((e) => MultiSelectItem<String>(e, e)).toList(),
           initialValue: initialValue,
-          backgroundColor: const Color(0xFF2C2C2C),
-          title: Text(label, style: _font(color: Colors.white)),
-          selectedColor: Colors.greenAccent,
+          backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.box2Dark : AppColors.box2Light,
+          title: Text(label, style: _font(color: textcolor)),
+          selectedColor:   Theme.of(context).brightness ==  Brightness.dark ? Colors.greenAccent : Color.fromARGB(255, 47, 160, 76),
           searchable: false,
           
-          itemsTextStyle: _font(color: Colors.white),
-          selectedItemsTextStyle: _font(color: Colors.white),
+          itemsTextStyle: _font(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+          selectedItemsTextStyle: _font(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,),
 
           dialogHeight: MediaQuery.of(context).size.height * 0.5,
-          buttonIcon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+          buttonIcon: Icon(Icons.arrow_drop_down, color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark: AppColors.textLight),
           buttonText: Text(
             initialValue.isEmpty
                 ? "Select $label"
                 : "${initialValue.length} ${label.split(" ").last.toLowerCase()} selected",
-            style: _font(color: Colors.white),
+            style: _font(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark: AppColors.textLight),
             overflow: TextOverflow.ellipsis,
           ),
 
@@ -50,28 +52,29 @@ class AnalysisWidgets {
     required List<String> items,
     required String value,
     required ValueChanged<String?> onChanged,
+    required BuildContext context
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: _font(color: Colors.white70)),
+        Text(label, style: _font(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight)),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF2C2C2C),
+            color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : const Color.fromARGB(255, 161, 160, 160),
             borderRadius: BorderRadius.circular(10),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: DropdownButton<String>(
-            dropdownColor: const Color(0xFF2C2C2C),
+            dropdownColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
             isExpanded: true,
             value: value,
-            icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+            icon: Icon(Icons.arrow_drop_down, color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
             underline: const SizedBox(),
             items: items
                 .map((item) => DropdownMenuItem(
                       value: item,
-                      child: Text(item, style: TextStyle(color: Colors.white)),
+                      child: Text(item, style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight)),
                     ))
                 .toList(),
             onChanged: onChanged,
@@ -85,16 +88,19 @@ class AnalysisWidgets {
     required String title,
     required String groupValue,
     required ValueChanged<String> onChanged,
+    required Color selectColor,
+    required Color textcolor,    
   }) {
     return Row(
       children: [
         Radio<String>(
           value: title,
           groupValue: groupValue,
-          activeColor: Colors.greenAccent,
+          // activeColor: Colors.greenAccent,
+          activeColor: selectColor, 
           onChanged: (val) => onChanged(val!),
         ),
-        Text(title, style: _font(color: Colors.white70)),
+        Text(title, style: _font(color: textcolor)),
       ],
     );
   }

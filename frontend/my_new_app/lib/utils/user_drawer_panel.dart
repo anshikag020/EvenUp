@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/sections/login_page.dart';
+import 'package:my_new_app/sections/reset_password_page.dart';
+import 'package:my_new_app/theme/app_colors.dart';
+import 'package:my_new_app/utils/confirmation_dialogbox.dart';
+import 'package:my_new_app/utils/general_utils.dart';
+import 'package:my_new_app/utils/toggle_theme_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserDrawerPanel extends StatefulWidget {
   final bool isDarkMode;
@@ -33,7 +40,11 @@ class _UserDrawerPanelState extends State<UserDrawerPanel> {
     return Align(
       alignment: Alignment.centerRight,
       child: Material(
-        color: Colors.black,
+        color:
+            Theme.of(context).brightness == Brightness.dark
+                ? AppColors.backgroundDark
+                : AppColors.backgroundLight,
+
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(16),
           bottomLeft: Radius.circular(16),
@@ -48,17 +59,29 @@ class _UserDrawerPanelState extends State<UserDrawerPanel> {
                   padding: const EdgeInsets.only(top: 60),
                   child: Column(
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 40,
-                        backgroundColor: Colors.white12,
-                        child: Icon(Icons.person, size: 50, color: Colors.white),
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.circleAvatarColorDark
+                                : AppColors.circleAvatarColorWhite,
+
+                        //  Colors.white12,
+                        child: Icon(
+                          Icons.person,
+                          size: 50,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
                         "UserID - Monish",
                         style: GoogleFonts.poppins(
                           fontSize: 16,
-                          color: Colors.white,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.backgroundLight
+                                  : AppColors.backgroundDark,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -71,40 +94,101 @@ class _UserDrawerPanelState extends State<UserDrawerPanel> {
                       ),
                       const SizedBox(height: 12),
                       ListTile(
-                        leading: const Icon(Icons.key, color: Colors.white),
+                        leading: Icon(
+                          Icons.key,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.backgroundLight
+                                  : AppColors.backgroundDark,
+                        ),
                         title: Text(
                           "Reset Password",
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.backgroundLight
+                                    : AppColors.backgroundDark,
+                          ),
                         ),
-                        onTap: widget.onResetPassword,
-                        contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+                        onTap: (){
+                          widget.onResetPassword;
+                          
+                          //  write the logic correctly 
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ResetPasswordPage(),
+                            ),
+                          );
+                          
+                        },
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          20,
+                          15,
+                          20,
+                          15,
+                        ),
                       ),
+                      ThemeToggleTile(),
                       ListTile(
-                        leading: const Icon(Icons.brightness_2_outlined, color: Colors.white),
-                        title: Text(
-                          "Night Mode",
-                          style: GoogleFonts.poppins(color: Colors.white),
+                        leading: Icon(
+                          Icons.logout,
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.backgroundLight
+                                  : AppColors.backgroundDark,
                         ),
-                        trailing: Switch(
-                          value: darkMode,
-                          onChanged: (val) {
-                            setState(() {
-                              darkMode = val;
-                            });
-                            widget.onThemeChanged(val);
-                          },
-                          activeColor: Colors.white,
-                        ),
-                        contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.logout, color: Colors.white),
                         title: Text(
                           "Logout",
-                          style: GoogleFonts.poppins(color: Colors.white),
+                          style: GoogleFonts.poppins(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.backgroundLight
+                                    : AppColors.backgroundDark,
+                          ),
                         ),
-                        onTap: widget.onLogout,
-                        contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+                        onTap: () {
+                          widget.onLogout;
+                          showDialog(
+                            context: context,
+                            builder:
+                                (context) => ConfirmationDialog(
+                                  message: 'Are you sure you want to logout?',
+                                  onConfirm: () async {
+                                    // handle logic here
+                                    SharedPreferences prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setBool('isLoggedIn', false);
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => LoginPage(),
+                                      ),
+                                    );
+                                    // Navigator.pop(context);
+                                    showCustomSnackBar(
+                                      context,
+                                      "Logged out successfully",
+                                      backgroundColor: const Color.fromARGB(
+                                        255,
+                                        129,
+                                        171,
+                                        13,
+                                      ),
+                                    );
+                                  },
+                                  onCancel: () => Navigator.pop(context),
+                                ),
+                          );
+                        },
+
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          20,
+                          15,
+                          20,
+                          15,
+                        ),
                       ),
                     ],
                   ),
@@ -115,7 +199,13 @@ class _UserDrawerPanelState extends State<UserDrawerPanel> {
                   top: 8,
                   left: 8,
                   child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(
+                      Icons.close,
+                      color:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.backgroundLight
+                              : AppColors.backgroundDark,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),

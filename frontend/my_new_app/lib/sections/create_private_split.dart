@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/general_utils.dart';
 import 'package:my_new_app/utils/join_group_utils.dart';
@@ -17,7 +18,7 @@ class _CreatePrivateSplitState extends State<CreatePrivateSplit> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF1C1C1C),
+      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 25),
@@ -28,26 +29,22 @@ class _CreatePrivateSplitState extends State<CreatePrivateSplit> {
               "Create Private Split",
               style: GoogleFonts.poppins(
                 fontSize: 18,
-                color: Colors.white,
+                color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const Divider(color: Colors.white30),
+            Divider(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
 
             const SizedBox(height: 12),
-            buildLabel("Enter UserID"),
+            buildLabel("Enter UserID", Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight ),
             const SizedBox(height: 8),
-            buildInputField(_splitNameController),
+            buildInputField(_splitNameController, Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
 
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                buildActionButton("Create", const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color.fromRGBO(208, 227, 64, 1), Color.fromRGBO(28, 54, 6, 1)],
-                      ), () {
+                buildActionButton("Create", Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme, () {
                   // Navigator.pop(context);
                   showDialog(
                     context: context,
@@ -69,11 +66,7 @@ class _CreatePrivateSplitState extends State<CreatePrivateSplit> {
                   ); 
                   // Handle create logic here
                 }),
-                buildActionButton("Cancel", const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color.fromRGBO(255, 71, 139, 1), Color.fromRGBO(58, 11, 30, 1)],
-                ), () {
+                buildActionButton("Cancel", Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme, () {
                   Navigator.pop(context);
                 }),
               ],

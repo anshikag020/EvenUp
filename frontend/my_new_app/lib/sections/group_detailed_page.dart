@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/sections/add_expense.dart';
 import 'package:my_new_app/sections/all_expenses.dart';
 import 'package:my_new_app/sections/show_balances.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
+import 'package:my_new_app/utils/general_utils.dart';
 import 'package:my_new_app/utils/group_detailed_page_utils.dart';
 import 'package:my_new_app/utils/view_all_members_utils.dart';
 
@@ -26,45 +28,45 @@ class GroupDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2D2D2D),
+        backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
         title: Text(
           '$groupName: $groupType',
-          style: GoogleFonts.poppins(fontSize: 25, color: Colors.white),
+          style: GoogleFonts.poppins(fontSize: 25, color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
         ),
         actions: [
           Builder(
             builder:
                 (context) => IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
+                  icon: Icon(Icons.menu, color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                   onPressed: () => Scaffold.of(context).openEndDrawer(),
                 ),
           ),
         ],
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,),
       ),
       endDrawer: Drawer(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
         child: SafeArea(
           child: Column(
             children: [
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.exit_to_app,
-                  color: Color.fromARGB(255, 255, 255, 255),
+                  color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
                 ),
                 title: Text(
                   "Exit Group",
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                 ),
                 onTap: () {},
               ),
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.white),
+                leading: Icon(Icons.delete, color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                 title: Text(
                   "Delete group",
-                  style: GoogleFonts.poppins(color: Colors.white),
+                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
                 ),
                 onTap: () {},
               ),
@@ -83,13 +85,13 @@ class GroupDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2C2C2C),
+                  color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.box2Dark : AppColors.box2Light,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   "Invite Code: $inviteCode",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 20),
+                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 20),
                 ),
               ),
               const SizedBox(height: 20),
@@ -98,14 +100,7 @@ class GroupDetailScreen extends StatelessWidget {
                   buildActionBox(
                     label: "All\nExpenses",
                     icon: Icons.receipt_long,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.fromRGBO(6, 131, 81, 1),
-                        Color.fromRGBO(0, 31, 18, 1),
-                      ],
-                    ),
+                    gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenTileDark : AppColors.greenTileWhite, 
                     // onTap: () {},
                     onTap: () {
                       Navigator.push(
@@ -118,14 +113,7 @@ class GroupDetailScreen extends StatelessWidget {
                   buildActionBox(
                     label: "All\nBalances",
                     icon: Icons.menu_book,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.fromRGBO(15, 111, 179, 1),
-                        Color.fromRGBO(0, 11, 31, 1),
-                      ],
-                    ),
+                    gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.blueTileDark : AppColors.blueTileWhite,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -143,7 +131,7 @@ class GroupDetailScreen extends StatelessWidget {
                   
                 showDialog(
                   context: context,
-                  builder: (_) => AddExpenseDialog(groupID: groupID),
+                  builder: (_) => AddExpenseDialog(groupID: groupID,parentContext: context,),
                 );
 
                 },
@@ -187,14 +175,7 @@ class GroupDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.fromRGBO(106, 23, 169, 1),
-                        Color.fromRGBO(34, 2, 61, 1),
-                      ],
-                    ),
+                    gradient:Theme.of(context).brightness ==  Brightness.dark ? AppColors.purplrTileDark : AppColors.purplrTileWhite,
                     borderRadius: BorderRadius.circular(50),
                   ),
                   child: Text(
@@ -220,6 +201,7 @@ class GroupDetailScreen extends StatelessWidget {
                                   message: 'Are you sure you want to use Confirm feature of OTS group?',
                                   onConfirm: () {
                                     // handle here
+                                    showCustomSnackBar(context, "You confirmed on this OTS group", backgroundColor: Color.fromRGBO(156, 13, 40, 1)); 
                                   },
                                   onCancel: () {},
                                 ),
@@ -234,14 +216,7 @@ class GroupDetailScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 17),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color.fromRGBO(178, 3, 70, 1),
-                              Color.fromRGBO(61, 2, 13, 1),
-                            ],
-                          ),
+                          gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.redTileDark : AppColors.redTileLight,
                           borderRadius: BorderRadius.circular(50),
                         ),
                         child: Column(
@@ -272,7 +247,7 @@ class GroupDetailScreen extends StatelessWidget {
               const SizedBox(height: 34),
               Text(
                 "Description:",
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 21),
+                style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 21),
               ),
               const SizedBox(height: 8),
               Container(
@@ -280,14 +255,14 @@ class GroupDetailScreen extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: 150),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2C2C2C),
+                  color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.box2Dark : AppColors.box2Light,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   description.isNotEmpty
                       ? description
                       : "No description provided.",
-                  style: GoogleFonts.poppins(color: Colors.white70),
+                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
                 ),
               ),
             ],

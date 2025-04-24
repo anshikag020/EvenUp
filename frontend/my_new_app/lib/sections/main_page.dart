@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_new_app/sections/dashboard_section.dart';
 import 'package:my_new_app/sections/groups_section.dart';
 import 'package:my_new_app/sections/pinged_section.dart';
+import 'package:my_new_app/theme/app_colors.dart';
  
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -31,10 +32,10 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color.fromARGB(255, 255, 255, 255),
-        unselectedItemColor: Colors.white38,
+        selectedItemColor: Theme.of(context).brightness == Brightness.dark ? AppColors.textDark : AppColors.textLight,
+        unselectedItemColor: Theme.of(context).brightness == Brightness.dark ? AppColors.textDark2 : AppColors.textLight2,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         showSelectedLabels: true,

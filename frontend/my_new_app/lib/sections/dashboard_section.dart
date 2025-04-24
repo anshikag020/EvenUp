@@ -6,6 +6,7 @@ import 'package:my_new_app/sections/create_group.dart';
 import 'package:my_new_app/sections/create_private_split.dart';
 import 'package:my_new_app/sections/join_group.dart';
 import 'package:my_new_app/sections/transactions_history.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/dashboard_utils.dart';
 import 'package:my_new_app/utils/user_drawer_panel.dart';
 
@@ -17,7 +18,7 @@ class DashboardScreen extends StatelessWidget {
     double width = MediaQuery.of(context).size.width ;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight ,
       body: SingleChildScrollView(
         child: SafeArea(
           child: Padding(
@@ -35,7 +36,7 @@ class DashboardScreen extends StatelessWidget {
                         Text(
                           "Hi Monish",
                           style: GoogleFonts.poppins(
-                            color: Colors.white70,
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white70: AppColors.textLight,
                             fontSize: width*0.047, 
                             // fontSize: 20,
                           ),
@@ -44,7 +45,7 @@ class DashboardScreen extends StatelessWidget {
                         Text(
                           "Welcome back",
                           style: GoogleFonts.poppins(
-                            color: Colors.white,
+                            color:  Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textLight,
                             fontSize: width*0.07,
                             // fontSize: 30,
                             fontWeight: FontWeight.w500,
@@ -53,7 +54,7 @@ class DashboardScreen extends StatelessWidget {
                       ],
                     ),
                     CircleAvatar(
-                      backgroundColor: Colors.white12,
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.circleAvatarColorDark: AppColors.circleAvatarColorWhite,
                       radius: width*0.07,
                       // radius: 25,
                       child: IconButton(
@@ -101,11 +102,7 @@ class DashboardScreen extends StatelessWidget {
                       child: DashboardTileVer(
                         title: "Create\nGroup",
                         icon: Icons.add_circle_outline,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color.fromRGBO(6, 131, 81, 1), Color.fromRGBO(0, 31, 18, 1)],
-                        ),
+                        gradient: Theme.of(context).brightness == Brightness.dark ? AppColors.greenTileDark: AppColors.greenTileWhite,
                         onTap: () {
                                     showDialog(
                                       context: context,
@@ -119,11 +116,7 @@ class DashboardScreen extends StatelessWidget {
                       child: DashboardTileVer(
                         title: "Create\nPrivate Split",
                         icon: Icons.add_circle_outline,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color.fromRGBO(15, 111, 179, 1), Color.fromRGBO(0, 11, 31, 1)],
-                        ),
+                        gradient:  Theme.of(context).brightness == Brightness.dark ? AppColors.blueTileDark: AppColors.blueTileWhite , 
                         onTap: () {
                           showGeneralDialog(
                             context: context,
@@ -158,11 +151,7 @@ class DashboardScreen extends StatelessWidget {
                   height: 100,
                   title: "Join Group",
                   icon: Icons.group_add,
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color.fromRGBO(237, 202, 3, 1), Color.fromRGBO(41, 43, 0, 1)],
-                  ),
+                  gradient: Theme.of(context).brightness == Brightness.dark ? AppColors.yelloweTileDark : AppColors.yellowTileWhite, 
                   onTap: () {
                     showGeneralDialog(
                       context: context,
@@ -190,11 +179,7 @@ class DashboardScreen extends StatelessWidget {
                   height: 100,
                   title: "Transactions History",
                   icon: Icons.history,
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color.fromRGBO(226, 93, 22, 1), Color.fromRGBO(44, 28, 1, 1)],
-                  ),
+                  gradient: Theme.of(context).brightness == Brightness.dark ? AppColors.orangeTileDark : AppColors.orangeTileWhite ,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -209,11 +194,7 @@ class DashboardScreen extends StatelessWidget {
                   height: 150,
                   title: "Track My\nMoney",
                   icon: Icons.show_chart,
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color.fromRGBO(106, 23, 169, 1), Color.fromRGBO(34, 2, 61, 1)],
-                  ),
+                  gradient: Theme.of(context).brightness == Brightness.dark ? AppColors.purplrTileDark : AppColors.purplrTileWhite,
                   onTap: () {
                     Navigator.push(
                       context,

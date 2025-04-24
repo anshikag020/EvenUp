@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/create_group_utils.dart';
 import 'package:my_new_app/utils/general_utils.dart';
@@ -18,9 +19,11 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
 
   @override
   Widget build(BuildContext context) {
+    Color textcolor = Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight; 
+
     double width = MediaQuery.of(context).size.width;
     return Dialog(
-      backgroundColor: const Color(0xFF1C1C1C),
+      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SingleChildScrollView(
         padding: EdgeInsets.only(bottom: 16, left: 16, right: 16, top: 16),
@@ -31,40 +34,43 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
               "Create Group",
               style: GoogleFonts.poppins(
                 fontSize: 18,
-                color: Colors.white,
+                color: textcolor,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const Divider(color: Colors.white30),
+            Divider(color: Theme.of(context).brightness ==  Brightness.dark ? Colors.white30 : AppColors.textLight),
 
             const SizedBox(height: 12),
-            buildLabel("Group Name:"),
+            buildLabel("Group Name:", context),
             const SizedBox(height: 10),
-            buildInputField(_nameController),
+            buildInputField(_nameController, context),
 
             const SizedBox(height: 20),
-            buildLabel("Group Type:"),
+            buildLabel("Group Type:", context),
             const SizedBox(height: 10),
             buildRadio(
               value: "Normal",
               groupValue: groupType,
               onChanged: (val) => setState(() => groupType = val),
+              context: context
             ),
             buildRadio(
               value: "OTS",
               groupValue: groupType,
               onChanged: (val) => setState(() => groupType = val),
+              context: context
             ),
             buildRadio(
               value: "Grey",
               groupValue: groupType,
               onChanged: (val) => setState(() => groupType = val),
+              context: context
             ),
 
             const SizedBox(height: 20),
-            buildLabel("Description:"),
+            buildLabel("Description:", context),
             const SizedBox(height: 10),
-            buildDescriptionField(_descController),
+            buildDescriptionField(_descController, context),
 
             const SizedBox(height: 20),
             Row(
@@ -73,14 +79,9 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                 buildActionButton(
                   width,
                   "Create",
-                  LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.fromRGBO(208, 227, 64, 1),
-                      Color.fromRGBO(28, 54, 6, 1),
-                    ],
-                  ),
+
+                  Theme.of(context).brightness ==  Brightness.dark ? 
+                  AppColors.greenButtondarktheme: AppColors.greenButtonwhitetheme ,
                   () {
                     showDialog(
                       context: context,
@@ -107,14 +108,7 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                 buildActionButton(
                   width,
                   "Cancel",
-                  LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.fromRGBO(255, 71, 139, 1),
-                      Color.fromRGBO(58, 11, 30, 1),
-                    ],
-                  ),
+                  Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
                   () {
                     Navigator.pop(context);
                   },
