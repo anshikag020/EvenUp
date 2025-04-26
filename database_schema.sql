@@ -50,7 +50,7 @@ CREATE TABLE expenses (
     description VARCHAR(255) NOT NULL,
     -- tag mapping: 0 = food, 1 = transport, 2 = entertainment, 3 = shopping, 4 = bills, 5 = other
     tag INT CHECK (tag IN (0, 1, 2, 3, 4, 5)) DEFAULT 5,
-    added_by VARCHAR(255) REFERENCES users(username),
+    added_by VARCHAR(255) REFERENCES users(username),   -- TODO: should i change added by to last modified by?
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     amount DECIMAL(10,2) NOT NULL
 );
@@ -83,7 +83,7 @@ CREATE TABLE intermediate_transactions (
     sender VARCHAR(255) REFERENCES users(username),
     receiver VARCHAR(255) REFERENCES users(username),
     amount DECIMAL(10,2) NOT NULL,
-    confirmed BOOLEAN DEFAULT FALSE
+    confirmed BOOLEAN DEFAULT FALSE   -- TODO: ig this is not required, since it is assumed that the sender is the one who confirmed
 );
 
 CREATE TABLE completed_transactions (

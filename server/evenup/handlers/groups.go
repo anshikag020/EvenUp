@@ -257,7 +257,7 @@ func ExitGroupProcedure(tx *sql.Tx, username string, groupID uuid.UUID) (bool, s
 	// 4. Check for incomplete intermediate transactions
 	row = tx.QueryRow(`
 		SELECT sender, receiver, amount FROM intermediate_transactions
-		WHERE group_id = $1 AND amount <> 0 AND confirmed = FALSE 
+		WHERE group_id = $1 AND amount <> 0
 		AND (sender = $2 OR receiver = $2)
 		LIMIT 1
 	`, groupID, username)
@@ -267,13 +267,13 @@ func ExitGroupProcedure(tx *sql.Tx, username string, groupID uuid.UUID) (bool, s
 		return false, "Database error while checking transactions"
 	}
 	if err != sql.ErrNoRows {
-	var other string
-	if sender == username {
-		other = receiver
-	} else {
-		other = sender
-	}
-	return false, fmt.Sprintf("Transactions not completely settled with %s", other)
+		var other string
+		if sender == username {
+			other = receiver
+		} else {
+			other = sender
+		}
+		return false, fmt.Sprintf("Transactions not completely settled with %s", other)
 	}
 
 
@@ -332,6 +332,7 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 	`, groupID, username).Scan(&participant)
 	if err == sql.ErrNoRows {
 		json.NewEncoder(w).Encode(map[string]interface{}{
+			"admin": false,
 			"status":  false,
 			"message": "User not part of the group",
 		})
@@ -353,10 +354,6 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 	}
 	if count == 1 {
 		// If the user is the last member, delete the group
-		// print yes
-		fmt.Println("Deleting group as user is the last member")
-		// print groupID
-		fmt.Println("Group ID:", groupID)
 		_, err = tx.Exec(`
 			DELETE FROM groups WHERE group_id = $1
 		`, groupID)
@@ -365,9 +362,17 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to delete group", http.StatusInternalServerError)
 			return
 		}
+
+		// Commit the transaction
+		if err := tx.Commit(); err != nil {
+			log.Println("Transaction commit error after group deletion:", err)
+			http.Error(w, "Transaction failed", http.StatusInternalServerError)
+			return
+		}
+
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status":  true,
-			"message": "Group deleted successfully",
+			"message": "Group exited successfully",
 		})
 		return
 	}
@@ -383,7 +388,6 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 			"is_admin":     false,
 			"status":       false,
 			"message":      "Group not found",
-			"members_list": []map[string]interface{}{},
 		})
 		return
 	}
@@ -437,7 +441,11 @@ func ExitGroup(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	
+	if err := tx.Commit(); err != nil {
+		log.Println("Transaction commit error:", err)
+		http.Error(w, "Transaction failed", http.StatusInternalServerError)
+		return
+	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"is_admin":     true,
@@ -502,7 +510,7 @@ func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
 	if err == sql.ErrNoRows {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status":  false,
-			"message": "The selected new admin is not a member of the group",
+			"message": "The selected new user is not a member of the group",
 		})
 		return
 	} else if err != nil {
@@ -578,12 +586,18 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	// Only admin can delete
 	if adminUser != req.Username {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
 			"message": "You are not admin",
 		})
+		if err := tx.Commit(); err != nil {
+			http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+			return
+		}
+		
 		return
 	}
 
@@ -598,19 +612,29 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 			"status": false,
 			"message": "All balances must be settled",
 		})
+		if err := tx.Commit(); err != nil {
+			http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+			return
+		}
+		
 		return
 	}
 
 	// Ensure no pending intermediate transactions
 	err = tx.QueryRow(`
 		SELECT amount FROM intermediate_transactions
-		WHERE group_id = $1 AND amount <> 0 AND confirmed = FALSE LIMIT 1
+		WHERE group_id = $1 AND amount <> 0 LIMIT 1
 	`, groupUUID).Scan(&amt)
 	if err != sql.ErrNoRows {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
 			"message": "Pending transactions must be completed",
 		})
+		if err := tx.Commit(); err != nil {
+			http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+			return
+		}
+		
 		return
 	}
 

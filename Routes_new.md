@@ -304,7 +304,6 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-// what if the user is the last member in the group? (error in this case)
 ### 14. EXIT GROUP      
 **Route**: ```/api/exit_group```\
 **METHOD**: ```DELETE```\
@@ -320,10 +319,10 @@ We can use this to store the session values in the cookie (backend).
 **Response**:
 ```json
 { 
-  "is_admin": "bool",      // like: true: Success, false: Failure
+  "is_admin": "bool",      // like: true, false, this flag is sent only when the status is false
   "status": "bool",         // like: true: Success, false: Failure    // if the user is admin, then this will be false
   "message": "string",       // like: "Group exited successfully", "Cannot exit group! All balances not settled", "Group not found", "Admin!", "Transactions not completely settled" 
-  "members_list": [         // this list is empty if the user is not admin
+  "members_list": [         // this list is returned only when the user is the admin
     "username" : "string",
     "name" : "string"
   ]
@@ -587,6 +586,27 @@ We can use this to store the session values in the cookie (backend).
   "message": "string"       // like: "Expense added successfully", "Group not found", "Some user has left the group"
 }
 ```
+
+### 24. DELETE EXPENSE
+**Route**: ```/api/delete_expense```\
+**METHOD**: ```DELETE```\
+**Description**: Used for deleting an expense.\
+**Request body**:
+```json
+{  
+  "expense_id": "string",
+  "username": "string",
+  "cookie"
+}
+```
+**Response**:
+```json
+{  
+  "status": "bool",         // like: true: Success, false: Failure
+  "message": "string"       // like: "Expense deleted successfully", "Group not found", "Expense not found", "User not found", "Some user has left the group"
+}
+```
+
 
 
 1. For sending emails, use ```SendGrid```.

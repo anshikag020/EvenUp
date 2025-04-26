@@ -49,7 +49,6 @@ func GetUserDetails (w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
 func CreateGroup(w http.ResponseWriter, r *http.Request) {
 
 // 	body, _ := io.ReadAll(r.Body)
@@ -91,25 +90,34 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Begin a transaction
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+		return
+	}
+
 	// Insert the group into the database
 	var groupID uuid.UUID
-	err = config.DB.QueryRow(
+	err = tx.QueryRow(
 		"INSERT INTO groups (group_name, group_description, group_type, admin_username) "+
 			"VALUES ($1, $2, $3, $4) RETURNING group_id",
 		req.GroupName, req.GroupDescription, groupType, Username,
 	).Scan(&groupID)
 	if err != nil {
+		tx.Rollback()
 		http.Error(w, "Failed to create group", http.StatusInternalServerError)
 		return
 	}
 
 	// If the group is OTS, insert the admin into the ots_group_participants table
 	if groupType == 0 {
-		_, err = config.DB.Exec(
+		_, err = tx.Exec(
 			"INSERT INTO ots_group_participants (group_id, user_name) VALUES ($1, $2)",
 			groupID, Username,
 		)
 		if err != nil {
+			tx.Rollback()
 			log.Println("Error inserting into ots_group_participants:", err)
 			http.Error(w, "Failed to add admin to OTS participants", http.StatusInternalServerError)
 			return
@@ -117,12 +125,20 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert the admin into the group_participants table
-	_, err = config.DB.Exec(
+	_, err = tx.Exec(
 		"INSERT INTO group_participants (group_id, participant) VALUES ($1, $2)",
 		groupID, Username,
 	)
 	if err != nil {
+		tx.Rollback()
 		http.Error(w, "Failed to add admin to group participants", http.StatusInternalServerError)
+		return
+	}
+
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
 
@@ -133,9 +149,6 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		"message": "Group created successfully",
 	})
 }
-
-
-
 
 
 func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
