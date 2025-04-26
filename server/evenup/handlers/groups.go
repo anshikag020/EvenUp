@@ -1,53 +1,71 @@
 package handlers
 
-import(
-	"net/http"
+import (
+	"database/sql"
 	"encoding/json"
-	"github.com/anshikag020/EvenUp/server/evenup/config"
-	"github.com/google/uuid"
 	"fmt"
 	"log"
-	"database/sql"
+	"net/http"
+
+	"github.com/anshikag020/EvenUp/server/evenup/config"
+	"github.com/anshikag020/EvenUp/server/evenup/middleware"
+	"github.com/google/uuid"
 )
 
 func GetGroups(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
-	var req struct {
-		Username string `json:"username"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	Username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
 		return
 	}
 
+	// var req struct {
+	// 	Username string `json:"username"`
+	// }
+	// err := json.NewDecoder(r.Body).Decode(&req)
+	// if err != nil {
+	// 	http.Error(w, "Invalid request body", http.StatusBadRequest)
+	// 	return
+	// }
+
 	// Query to get all groups the user is a part of
 	rows, err := config.DB.Query(`
-		SELECT g.group_name, COUNT(gp.participant) AS members, g.group_id
+		SELECT g.group_name, COUNT(gp.participant) AS members, g.group_id, g.group_description, g.invite_code, g.group_type
 		FROM groups g
 		JOIN group_participants gp ON g.group_id = gp.group_id
 		WHERE gp.participant = $1
 		GROUP BY g.group_name, g.group_id
-	`, req.Username)
+	`, Username)
 	if err != nil {
 		http.Error(w, "Failed to retrieve groups", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
+	type_map := map[int]string{
+		0: "OTS",
+		1: "Private-Split",
+		2: "Normal",
+	}
+
 	// Prepare the response
 	var groups []map[string]interface{}
 	for rows.Next() {
-		var groupName, groupID string
-		var members int
-		if err := rows.Scan(&groupName, &members, &groupID); err != nil {
+		var groupName, groupID, description, invite_code string
+		var members, group_type int
+		if err := rows.Scan(&groupName, &members, &groupID, &description, &invite_code, &group_type); err != nil {
 			http.Error(w, "Failed to scan group data", http.StatusInternalServerError)
 			return
 		}
+
 		groups = append(groups, map[string]interface{}{
-			"group_name": groupName,
-			"members":    members,
-			"group_id":   groupID,
+			"name": groupName,
+			"size":    members,
+			"groupID":   groupID,
+			"description": description,
+			"inviteCode": invite_code,  
+			"groupType": type_map[group_type],
 		})
 	}
 
@@ -60,7 +78,6 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	// Send success response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"status": true,
 		"groups": groups,
 	})
 }

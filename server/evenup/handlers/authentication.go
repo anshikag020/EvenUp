@@ -148,7 +148,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": req["username"],
-		"exp":      time.Now().Add(time.Minute*1).Unix(), // token expires in 1 hour
+		"exp": time.Now().Add(time.Hour*1).Unix(), // token expires in 1 hour
 	})
 
 	tokenString, err := token.SignedString(config.JwtSecretKey)
@@ -275,7 +275,6 @@ func ResetPassword(w http.ResponseWriter, r *http.Request){
 
 func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	username, ok := middleware.GetUsernameFromContext(r)
-	print(ok)
 	if !ok {
 		http.Error(w, "User not authorized", http.StatusUnauthorized)
 		return

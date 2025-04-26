@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 
 class MockGroupService implements GroupService {
   @override
-  Future<List<GroupModel>> fetchGroups() async {
+  Future<List<GroupModel>> fetchGroups(BuildContext context) async {
     final String response = await rootBundle.loadString(
       'lib/data/groups_section_data.json',
     );

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
+import 'package:my_new_app/models/dashboard_section_models.dart';
+import 'package:my_new_app/services/service%20interfaces/dashboard_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/general_utils.dart';
@@ -53,17 +56,40 @@ class _JoinGroupDialogState extends State<JoinGroupDialog> {
                       context: context,
                       builder: (context) => ConfirmationDialog(
                         message: 'Are you sure you want to join this group?',
-                        onConfirm: () {
+                        onConfirm: () async {
                           //  handle logic here
                           Navigator.pop(context); // Close the dialog
-                          showCustomSnackBar(
-                                context,
-                                "Joined new group successfully",
-                                backgroundColor: const Color.fromARGB(255, 175, 155, 39)
-                              );
+                          
+                          final inviteCode = _inviteCodeController.text.trim(); 
+
+                          if( inviteCode.isEmpty) {
+                            showCustomSnackBar(
+                              context,
+                              "Please enter the invite code",
+                              backgroundColor: Colors.red,
+                            );
+                            return;
+                          }
+
+        
+                          final joinModel = JoinGroupModel(
+                            inviteCode: inviteCode
+                          );
+
+                          final JoinGroupService currentJoinService =
+                              locator<JoinGroupService>();
+                          await currentJoinService.joinGroupByCode(joinModel, context);
+
+
+                          
+                          // showCustomSnackBar(
+                          //       context,
+                          //       "Joined new group successfully",
+                          //       backgroundColor: const Color.fromARGB(255, 175, 155, 39)
+                          //     );
                         },
                         onCancel: () {
-                          Navigator.pop(context); // Just close the dialog
+                          Navigator.pop(context); // Just close dialog
                         },
                       ),
                     ); 

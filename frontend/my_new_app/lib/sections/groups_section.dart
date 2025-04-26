@@ -29,7 +29,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Future<void> _loadGroups() async {
-    final groups = await _groupService.fetchGroups();
+    final groups = await _groupService.fetchGroups(context);
     setState(() {
       allGroups = groups;
       filteredGroups = groups;

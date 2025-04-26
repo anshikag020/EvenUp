@@ -11,7 +11,7 @@ class ApiAuthService implements AuthService {
   final String baseUrl;
 
   ApiAuthService({required this.baseUrl});
-
+ 
   @override
   Future<LoginResponse> login(String username, String password) async {
     final response = await http.post(

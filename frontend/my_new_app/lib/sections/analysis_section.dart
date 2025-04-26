@@ -33,7 +33,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   String selectedType = 'Spent';
 
 Future<void> loadGroupOptions() async {
-  final groupData = await _groupService.fetchGroups(); // assuming it returns List<Map<String, dynamic>>
+  final groupData = await _groupService.fetchGroups(context); // assuming it returns List<Map<String, dynamic>>
 
   setState(() {
     groupOptions = groupData

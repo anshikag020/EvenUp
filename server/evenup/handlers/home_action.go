@@ -1,14 +1,18 @@
 package handlers
 
-import(
+import (
 	"encoding/json"
-	"net/http"
 	"fmt"
+	"net/http"
+
 	//"log"
 	"github.com/anshikag020/EvenUp/server/evenup/config"
+	"github.com/anshikag020/EvenUp/server/evenup/middleware"
+
 	//"golang.org/x/crypto/bcrypt"
-	"github.com/google/uuid"
 	"log"
+
+	"github.com/google/uuid"
 )
 
 func GetUserDetails (w http.ResponseWriter, r *http.Request) {
@@ -47,8 +51,20 @@ func GetUserDetails (w http.ResponseWriter, r *http.Request) {
 
 
 func CreateGroup(w http.ResponseWriter, r *http.Request) {
+
+// 	body, _ := io.ReadAll(r.Body)
+// fmt.Println(string(body))
+// r.Body = io.NopCloser(bytes.NewBuffer(body)) // Reset body so Decoder can read it again
+
+
+	Username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
+
 	var req struct {
-		Username        string `json:"username"`
+		// Username        string `json:"username"`
 		GroupName       string `json:"group_name"`
 		GroupDescription string `json:"group_description"`
 		GroupType       string `json:"group_type"` // "OTS", "Grey Group", etc.
@@ -64,7 +80,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	// Convert group_type to an integer value
 	var groupType int
 	switch req.GroupType {
-	case "OTS":
+	case "OTS Group":
 		groupType = 0
 	case "Grey Group":
 		groupType = 1
@@ -80,7 +96,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	err = config.DB.QueryRow(
 		"INSERT INTO groups (group_name, group_description, group_type, admin_username) "+
 			"VALUES ($1, $2, $3, $4) RETURNING group_id",
-		req.GroupName, req.GroupDescription, groupType, req.Username,
+		req.GroupName, req.GroupDescription, groupType, Username,
 	).Scan(&groupID)
 	if err != nil {
 		http.Error(w, "Failed to create group", http.StatusInternalServerError)
@@ -91,7 +107,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if groupType == 0 {
 		_, err = config.DB.Exec(
 			"INSERT INTO ots_group_participants (group_id, user_name) VALUES ($1, $2)",
-			groupID, req.Username,
+			groupID, Username,
 		)
 		if err != nil {
 			log.Println("Error inserting into ots_group_participants:", err)
@@ -103,7 +119,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	// Insert the admin into the group_participants table
 	_, err = config.DB.Exec(
 		"INSERT INTO group_participants (group_id, participant) VALUES ($1, $2)",
-		groupID, req.Username,
+		groupID, Username,
 	)
 	if err != nil {
 		http.Error(w, "Failed to add admin to group participants", http.StatusInternalServerError)
@@ -117,6 +133,11 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		"message": "Group created successfully",
 	})
 }
+
+
+
+
+
 func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var req struct {
@@ -208,8 +229,16 @@ func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 
 func JoinGroup(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
+
+	Username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
+
+
 	var req struct {
-		Username   string `json:"username"`
+		// Username   string `json:"username"`
 		InviteCode string `json:"invite_code"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -259,7 +288,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 	var exists int
 	err = tx.QueryRow(`
 		SELECT COUNT(*) FROM group_participants WHERE group_id = $1 AND participant = $2
-	`, groupID, req.Username).Scan(&exists)
+	`, groupID, Username).Scan(&exists)
 	if err != nil {
 		http.Error(w, "Failed to check existing membership", http.StatusInternalServerError)
 		return
@@ -278,7 +307,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 	_, err = tx.Exec(`
 		INSERT INTO group_participants (group_id, participant)
 		VALUES ($1, $2)
-	`, groupID, req.Username)
+	`, groupID, Username)
 	if err != nil {
 		log.Println("Error inserting into group_participants:", err)
 		http.Error(w, "Failed to add to group_participants", http.StatusInternalServerError)
@@ -290,7 +319,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 		_, err = tx.Exec(`
 			INSERT INTO ots_group_participants (group_id, user_name)
 			VALUES ($1, $2)
-		`, groupID, req.Username)
+		`, groupID, Username)
 		if err != nil {
 			http.Error(w, "Failed to add to ots_group_participants", http.StatusInternalServerError)
 			return

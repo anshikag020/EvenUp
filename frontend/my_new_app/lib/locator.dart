@@ -1,5 +1,6 @@
 
 import 'package:get_it/get_it.dart';
+import 'package:my_new_app/services/api_services/api_dashboard_section_service.dart';
 import 'package:my_new_app/services/api_services/api_groups_section_service.dart';
 import 'package:my_new_app/services/api_services/api_login_section.dart';
 import 'package:my_new_app/services/api_services/api_pinged_section_service.dart';
@@ -7,6 +8,7 @@ import 'package:my_new_app/services/api_services/api_transaction_history_service
 import 'package:my_new_app/services/mock_services/mock_groups_section_service.dart';
 import 'package:my_new_app/services/mock_services/mock_pinged_section_service.dart';
 import 'package:my_new_app/services/mock_services/mock_transactions_history_service.dart';
+import 'package:my_new_app/services/service%20interfaces/dashboard_section_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/login_section_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/pinged_section_service_interface.dart';
@@ -43,6 +45,14 @@ void setupLocator({bool useMock = true}) {
 
   locator.registerLazySingleton<AuthService>(
   () => ApiAuthService(baseUrl: 'http://localhost:8080'),
+  );
+
+  locator.registerLazySingleton<CreateGroupService>(
+  () => CreateGroupServiceImpl('http://localhost:8080'),
+  );
+  
+  locator.registerLazySingleton<JoinGroupService>(
+  () => JoinGroupImpl('http://localhost:8080'),
   );
 
 }

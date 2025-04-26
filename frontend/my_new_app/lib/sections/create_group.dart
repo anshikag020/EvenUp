@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
+import 'package:my_new_app/models/dashboard_section_models.dart';
+// import 'package:my_new_app/services/api_services/api_dashboard_section_service.dart';
+import 'package:my_new_app/services/service%20interfaces/dashboard_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/create_group_utils.dart';
@@ -19,11 +23,17 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
 
   @override
   Widget build(BuildContext context) {
-    Color textcolor = Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight; 
+    Color textcolor =
+        Theme.of(context).brightness == Brightness.dark
+            ? AppColors.textDark
+            : AppColors.textLight;
 
     double width = MediaQuery.of(context).size.width;
     return Dialog(
-      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.dark
+              ? AppColors.backgroundDark
+              : AppColors.backgroundLight,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SingleChildScrollView(
         padding: EdgeInsets.only(bottom: 16, left: 16, right: 16, top: 16),
@@ -38,7 +48,12 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            Divider(color: Theme.of(context).brightness ==  Brightness.dark ? Colors.white30 : AppColors.textLight),
+            Divider(
+              color:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white30
+                      : AppColors.textLight,
+            ),
 
             const SizedBox(height: 12),
             buildLabel("Group Name:", context),
@@ -52,19 +67,19 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
               value: "Normal",
               groupValue: groupType,
               onChanged: (val) => setState(() => groupType = val),
-              context: context
+              context: context,
             ),
             buildRadio(
               value: "OTS",
               groupValue: groupType,
               onChanged: (val) => setState(() => groupType = val),
-              context: context
+              context: context,
             ),
             buildRadio(
               value: "Grey",
               groupValue: groupType,
               onChanged: (val) => setState(() => groupType = val),
-              context: context
+              context: context,
             ),
 
             const SizedBox(height: 20),
@@ -80,8 +95,9 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                   width,
                   "Create",
 
-                  Theme.of(context).brightness ==  Brightness.dark ? 
-                  AppColors.greenButtondarktheme: AppColors.greenButtonwhitetheme ,
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.greenButtondarktheme
+                      : AppColors.greenButtonwhitetheme,
                   () {
                     showDialog(
                       context: context,
@@ -89,14 +105,44 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                           (context) => ConfirmationDialog(
                             message:
                                 'Are you sure you want to create this group?',
-                            onConfirm: () {
-                              // handle logic here
-                              Navigator.pop(context); // Close the dialog
-                              showCustomSnackBar(
-                                context,
-                                "New group created successfully",
-                                backgroundColor: const Color.fromRGBO(6, 131, 81, 1)
-                              );
+                            onConfirm: () async {
+                              
+                                Navigator.pop(
+                                  context,
+                                ); // Close confirmation dialog first
+
+
+                                final groupName = _nameController.text.trim();
+                                final groupDesc = _descController.text.trim();
+                                final type = groupType;
+
+                                if (groupName.isEmpty || groupDesc.isEmpty) {
+                                  showCustomSnackBar(
+                                    context,
+                                    "Please fill all fields",
+                                    backgroundColor: Colors.red,
+                                  );
+                                  return;
+                                }
+                                final newGroup = CreateGroupModel(
+                                  groupName: groupName,
+                                  groupDescription: groupDesc,
+                                  groupType: "$type Group",
+                                );
+
+                                final CreateGroupService groupService =
+                                    locator<CreateGroupService>();
+                                await groupService.createNewGroup(
+                                  newGroup,
+                                  context,
+                                );
+                              
+
+                              // showCustomSnackBar(
+                              //   context,
+                              //   "New group created successfully",
+                              //   backgroundColor: const Color.fromRGBO(6, 131, 81, 1)
+                              // );
                             },
                             onCancel: () {
                               Navigator.pop(context); // Just close the dialog
@@ -108,7 +154,9 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                 buildActionButton(
                   width,
                   "Cancel",
-                  Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.redbuttondarktheme
+                      : AppColors.redbuttonwhitetheme,
                   () {
                     Navigator.pop(context);
                   },

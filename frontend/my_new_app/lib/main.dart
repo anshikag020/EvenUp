@@ -8,7 +8,7 @@ import 'locator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  setupLocator(useMock: true);
+  setupLocator(useMock: false);
 
   final themeService = ThemeService();
   await themeService.loadTheme();

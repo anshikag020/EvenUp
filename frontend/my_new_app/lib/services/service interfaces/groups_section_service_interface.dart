@@ -1,7 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 
 abstract class GroupService {
-  Future<List<GroupModel>> fetchGroups();
+  Future<List<GroupModel>> fetchGroups(BuildContext context);
 }
 
 abstract class GroupMemberService {
@@ -19,3 +20,4 @@ abstract class DetailedExpenseService {
 abstract class BalanceService {
   Future<List<Balance>> fetchBalances();
 }
+
