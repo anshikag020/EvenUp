@@ -2,8 +2,11 @@ package routes
 
 import (
 	//"net/http"
-	"github.com/gorilla/mux"
+	"net/http"
+
 	"github.com/anshikag020/EvenUp/server/evenup/handlers"
+	"github.com/anshikag020/EvenUp/server/evenup/middleware"
+	"github.com/gorilla/mux"
 )
 
 func RegisterRoutes(router *mux.Router) {
@@ -12,6 +15,7 @@ func RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/api/login", handlers.LoginUser).Methods("POST")
 	router.HandleFunc("/api/logout", handlers.LogoutUser).Methods("POST")
 	router.HandleFunc("/api/reset_password", handlers.ResetPassword).Methods("POST")
+	router.Handle("/api/user/profile", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetUserProfile)))
 
 	// Home action Routes
 	router.HandleFunc("/api/get_user_details", handlers.GetUserDetails).Methods("GET")

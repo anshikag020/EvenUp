@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/sections/main_page.dart';
 import 'package:my_new_app/sections/reset_password_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_new_app/services/service%20interfaces/login_section_service_interface.dart';
 import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -54,20 +55,42 @@ final TextEditingController _passwordController = TextEditingController();
 
 
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 20),   
                   _buildGradientButton("Login", () async {
                     if (_formKey.currentState!.validate()) {
-                      // Add login logic here
+                      try {
+                        final authService = locator<AuthService>();
+                        final loginResponse = await authService.login(
+                          _usernameController.text.trim(),
+                          _passwordController.text.trim(),
+                        );
 
-                      SharedPreferences prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('isLoggedIn', true);
+                        if (loginResponse.success) {
+                          // Save the token is already done inside ApiAuthService.login()
 
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => MainPage()),
-                      );
+                          // Navigate to Main Page
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => MainPage()),
+                          );
+                        } else {
+                          // Show error if login failed
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(loginResponse.message ?? "Login failed")),
+                          );
+                        }
+                      } catch (e) {
+                        // Handle unexpected errors (server down, network error etc.)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('An error occurred: $e')),
+                        );
+                      }
                     }
                   }),
+
+
+
+
                   const SizedBox(height: 10),
                   TextButton(
                     onPressed: () {

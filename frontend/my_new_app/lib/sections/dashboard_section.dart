@@ -1,17 +1,41 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/sections/analysis_section.dart';
 import 'package:my_new_app/sections/create_group.dart';
 import 'package:my_new_app/sections/create_private_split.dart';
 import 'package:my_new_app/sections/join_group.dart';
 import 'package:my_new_app/sections/transactions_history.dart';
+import 'package:my_new_app/services/service%20interfaces/login_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/dashboard_utils.dart';
 import 'package:my_new_app/utils/user_drawer_panel.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+
+  String? username;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserName();
+  }
+
+  void loadUserName() async {
+    final api = locator<AuthService>();
+    final user = await api.getUserDetails(context);
+    setState(() {
+      username = user.name;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +58,7 @@ class DashboardScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Hi Monish",
+                          username != null ? "Hi, $username" : "Loading...",
                           style: GoogleFonts.poppins(
                             color: Theme.of(context).brightness == Brightness.dark ? Colors.white70: AppColors.textLight,
                             fontSize: width*0.047, 
@@ -75,6 +99,7 @@ class DashboardScreen extends StatelessWidget {
                                 onThemeChanged: (val) {},
                                 onResetPassword: () {},
                                 onLogout: () {},
+                                username: username, 
                               );
                             },
                             transitionBuilder: (_, anim, __, child) {

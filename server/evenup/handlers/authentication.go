@@ -1,10 +1,14 @@
 package handlers
 
-import(
+import (
 	"encoding/json"
-	"net/http"
 	"log"
+	"net/http"
+	"time"
+
 	"github.com/anshikag020/EvenUp/server/evenup/config"
+	"github.com/anshikag020/EvenUp/server/evenup/middleware"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -142,6 +146,19 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	//TODO: Generate cookie
 	
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": req["username"],
+		"exp":      time.Now().Add(time.Minute*1).Unix(), // token expires in 1 hour
+	})
+
+	tokenString, err := token.SignedString(config.JwtSecretKey)
+	if err != nil {
+		http.Error(w, "Could not generate token", http.StatusInternalServerError)
+		return
+	}
+
+
+
 	err = tx.Commit()
 	if err != nil {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
@@ -153,6 +170,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
+		"token":  tokenString,
 		"message": "User logged in successfully",
 		//TODO: "token":   token, // Optionally include the token in the response
 	})
@@ -252,3 +270,39 @@ func ResetPassword(w http.ResponseWriter, r *http.Request){
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
+
+
+
+func GetUserProfile(w http.ResponseWriter, r *http.Request) {
+	username, ok := middleware.GetUsernameFromContext(r)
+	print(ok)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch user details from DB
+	var name, email string
+	var darkMode bool
+	err := config.DB.QueryRow(
+		"SELECT username, email, dark_mode FROM users WHERE username=$1",
+		username,
+	).Scan(&name, &email, &darkMode)
+
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Send the user details
+	response := map[string]interface{}{
+		"username":  username,
+		"name":      name,
+		"email":     email,
+		"dark_mode": darkMode,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+

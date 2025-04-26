@@ -5,6 +5,7 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT NOT NULL,
+    dark_mode BOOLEAN DEFAULT FALSE,
     email_verified BOOLEAN DEFAULT FALSE
 );
 

@@ -3,7 +3,6 @@ import 'package:my_new_app/sections/login_page.dart';
 import 'package:my_new_app/sections/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -23,9 +22,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Future<void> _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool? status = prefs.getBool('isLoggedIn');
+    String? token = prefs.getString('jwtToken');
     setState(() {
-      _isLoggedIn = status ?? false;
+      _isLoggedIn = token != null;
       _isLoading = false;
     });
   }

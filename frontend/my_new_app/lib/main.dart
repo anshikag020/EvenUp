@@ -5,6 +5,7 @@ import 'package:my_new_app/theme/theme_service.dart';
 import 'package:provider/provider.dart';
 import 'locator.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   setupLocator(useMock: true);
