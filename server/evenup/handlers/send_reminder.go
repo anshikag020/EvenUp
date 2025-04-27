@@ -1,6 +1,7 @@
 package handlers
 
 import (
+    "database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -26,6 +27,18 @@ func SendGroupReminder(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Invalid group_id", http.StatusBadRequest)
         return
     }
+
+    var groupName string
+    err = config.DB.QueryRow(`SELECT group_name FROM groups WHERE group_id = $1`, gid).Scan(&groupName)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            http.Error(w, "Group not found", http.StatusNotFound)
+        } else {
+            http.Error(w, "DB error fetching group name", http.StatusInternalServerError)
+        }
+        return
+    }
+
     // fetch all other participant emails
     rows, err := config.DB.Query(`
         SELECT u.email 
@@ -55,8 +68,8 @@ func SendGroupReminder(w http.ResponseWriter, r *http.Request) {
     }
 
     // compose reminder
-    subject := fmt.Sprintf("Reminder: Settle your balance in group %s", gid.String())
-    body := fmt.Sprintf("Hi there,\n\nThis is a reminder to settle your outstanding balance in group %s with %s.\nPlease log in to EvenUp to settle up.\n\nThanks!", gid.String(), req.Username)
+    subject := fmt.Sprintf("Reminder: Settle your balance in group %s", groupName)
+    body := fmt.Sprintf("Hi there,\n\nThis is a reminder to settle your outstanding balance in group %s with %s.\nPlease log in to EvenUp to settle up.\n\nThanks!", groupName, req.Username)
 
     // send asynchronously so HTTP isn’t blocked
     go func() {

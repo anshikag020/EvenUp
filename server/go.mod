@@ -17,9 +17,9 @@ require (
 )
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.2 // direct
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/joho/godotenv v1.5.1 // direct
 )
 
 replace github.com/anshikag020/EvenUp/ws_server => ../ws_server
