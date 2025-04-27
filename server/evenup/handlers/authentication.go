@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"log"
 	"time"
-
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"github.com/golang-jwt/jwt/v5"
@@ -42,16 +42,16 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 	}()
 	
 
-	// Check if username already exists
+	// ------------------------------------------------------------------
+	// 1. username uniqueness
+	// ------------------------------------------------------------------
 	var exists bool
-	err = tx.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE username=$1)", req.Username).Scan(&exists)
-	// Check for errors in the query
+	err = tx.QueryRow(`SELECT EXISTS (SELECT 1 FROM users WHERE username = $1)`, req.Username).Scan(&exists)
 	if err != nil {
 		log.Printf("Error checking username: %v", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
-
 	if exists {
 		_ = tx.Rollback()
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -60,6 +60,25 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	// ------------------------------------------------------------------
+	// 2. e-mail uniqueness
+	// ------------------------------------------------------------------
+	err = tx.QueryRow(`SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)`, req.Email).Scan(&exists)
+	if err != nil {
+		log.Printf("Error checking e-mail: %v", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		_ = tx.Rollback()
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "Email already used",
+		})
+		return
+	}
+
 
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -97,7 +116,10 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	
 	// Directly decode the request body into a map or just use a struct in-line
-	var req map[string]string
+	var req struct {
+        Username string `json:"username"`
+	    Password string `json:"password"`
+	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -117,7 +139,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	// Check if user exists by username
 	var storedPassword string
-	err = config.DB.QueryRow("SELECT password FROM users WHERE username=$1", req["username"]).Scan(&storedPassword)
+	err = tx.QueryRow("SELECT password FROM users WHERE username=$1", req.Username).Scan(&storedPassword)
 	if err != nil {
 		if err.Error() == "sql: no rows in result set" {
 			// User not found
@@ -134,7 +156,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Compare the password
-	err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(req["password"]))
+	err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(req.Password))
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -144,21 +166,20 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: Generate cookie
+	// ---------------- JWT ----------------
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+        "username": req.Username,
+        "exp":      time.Now().Add(time.Hour).Unix(), // 1-hour expiry
+    })
+    tokenString, err := token.SignedString(config.JwtSecretKey)
+    if err != nil {
+        http.Error(w, "Could not generate token", http.StatusInternalServerError)
+        return
+    }
+
+    // optional: expose token as header as well
+    w.Header().Set("Authorization", "Bearer "+tokenString)
 	
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": req["username"],
-		"exp": time.Now().Add(time.Hour*1).Unix(), // token expires in 1 hour
-	})
-
-	tokenString, err := token.SignedString(config.JwtSecretKey)
-	if err != nil {
-		http.Error(w, "Could not generate token", http.StatusInternalServerError)
-		return
-	}
-
-
-
 	err = tx.Commit()
 	if err != nil {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
@@ -177,16 +198,12 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func LogoutUser(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Username string `json:"username"`
-	}
-
-	// Decode JSON request body into the `req` struct
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+    username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
+        return
+    }
+    _ = username // you’ll invalidate the token/server-side session here
 
 
 	// TODO: Invalidate the session or token here
@@ -203,7 +220,6 @@ func LogoutUser(w http.ResponseWriter, r *http.Request) {
 func ResetPassword(w http.ResponseWriter, r *http.Request){
 	// Parse the incoming request
 	var req struct {
-		Username    string `json:"username"`
 		OldPassword string `json:"old_password"`
 		NewPassword string `json:"new_password"`
 	}
@@ -225,9 +241,18 @@ func ResetPassword(w http.ResponseWriter, r *http.Request){
 		}
 	}()
 
-	// Check if user exists and retrieve the hashed password
-	var hashedPassword string
-	err = tx.QueryRow("SELECT password FROM users WHERE username=$1", req.Username).Scan(&hashedPassword)
+	// authenticated user
+    username, ok := middleware.GetUsernameFromContext(r)
+    if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
+        return
+    }
+
+    // Retrieve the hashed password
+    var hashedPassword string
+    err = tx.QueryRow("SELECT password FROM users WHERE username=$1", username).Scan(&hashedPassword)
+
+
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -247,7 +272,7 @@ func ResetPassword(w http.ResponseWriter, r *http.Request){
 	}
 
 	// Update the user's password in the database
-	_, err = tx.Exec("UPDATE users SET password=$1 WHERE username=$2", newHashedPassword, req.Username)
+	_, err = tx.Exec("UPDATE users SET password=$1 WHERE username=$2", newHashedPassword, username)
 	if err != nil {
 		http.Error(w, "Error updating password", http.StatusInternalServerError)
 		return

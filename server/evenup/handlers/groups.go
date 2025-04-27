@@ -13,8 +13,8 @@ import (
 )
 
 func GetGroups(w http.ResponseWriter, r *http.Request) {
-	// Parse request body
-	Username, ok := middleware.GetUsernameFromContext(r)
+	// authenticated user
+	username, ok := middleware.GetUsernameFromContext(r)
 	if !ok {
 		http.Error(w, "User not authorized", http.StatusUnauthorized)
 		return
@@ -31,12 +31,18 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 
 	// Query to get all groups the user is a part of
 	rows, err := config.DB.Query(`
-		SELECT g.group_name, COUNT(gp.participant) AS members, g.group_id, g.group_description, g.invite_code, g.group_type
+		SELECT g.group_name,
+			COUNT(gp.participant)            AS members,
+			g.group_id,
+			g.group_description,
+			g.invite_code,
+			g.group_type
 		FROM groups g
 		JOIN group_participants gp ON g.group_id = gp.group_id
 		WHERE gp.participant = $1
-		GROUP BY g.group_name, g.group_id
-	`, Username)
+		GROUP BY g.group_name, g.group_id, g.group_description, g.invite_code, g.group_type
+	`, username)
+
 	if err != nil {
 		http.Error(w, "Failed to retrieve groups", http.StatusInternalServerError)
 		return
@@ -52,20 +58,29 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	// Prepare the response
 	var groups []map[string]interface{}
 	for rows.Next() {
-		var groupName, groupID, description, invite_code string
-		var members, group_type int
-		if err := rows.Scan(&groupName, &members, &groupID, &description, &invite_code, &group_type); err != nil {
+		var (
+			groupName, groupID, description, inviteCode string
+			groupType                                   int
+			members                                     int
+		)
+		if err := rows.Scan(&groupName, &members, &groupID, &description, &inviteCode, &groupType); err != nil {
 			http.Error(w, "Failed to scan group data", http.StatusInternalServerError)
 			return
 		}
-
+		// TODO: look into this
+		typeMap := map[int]string{
+			0: "OTS",
+			1: "Grey Group",
+			2: "Normal Group",
+			3: "Private-Split",
+		}
 		groups = append(groups, map[string]interface{}{
-			"name": groupName,
-			"size":    members,
-			"groupID":   groupID,
+			"name":        groupName,
+			"size":        members,
+			"groupID":     groupID,
 			"description": description,
-			"inviteCode": invite_code,  
-			"groupType": type_map[group_type],
+			"inviteCode":  inviteCode,
+			"groupType":   typeMap[groupType],
 		})
 	}
 
@@ -295,19 +310,20 @@ func ExitGroupProcedure(tx *sql.Tx, username string, groupID uuid.UUID) (bool, s
 
 
 func ExitGroup(w http.ResponseWriter, r *http.Request) {
-	var req map[string]interface{}
+	var req struct {
+		GroupID string `json:"group_id"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	username, ok1 := req["username"].(string)
-	groupIDStr, ok2 := req["group_id"].(string)
-
-	if !ok1 || !ok2 {
-		http.Error(w, "Missing or invalid username/group_id", http.StatusBadRequest)
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
 		return
 	}
+	groupIDStr := req.GroupID
 
 	groupID, err := uuid.Parse(groupIDStr)
 	if err != nil {
@@ -463,12 +479,15 @@ func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	username, ok1 := req["username"].(string)
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
 	groupIDStr, ok2 := req["group_id"].(string)
 	newAdmin, ok3 := req["new_admin"].(string)
 
-	if !ok1 || !ok2 || !ok3 {
+	if !ok2 || !ok3 {
 		http.Error(w, "Missing or invalid parameters", http.StatusBadRequest)
 		return
 	}
@@ -550,8 +569,7 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 
 	// Parse request body
 	var req struct {
-		GroupID  string `json:"group_id"`
-		Username string `json:"username"`
+		GroupID string `json:"group_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -587,8 +605,13 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
 	// Only admin can delete
-	if adminUser != req.Username {
+	if adminUser != username {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status": false,
 			"message": "You are not admin",

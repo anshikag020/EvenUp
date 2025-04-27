@@ -13,14 +13,15 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	"log"
 )
 
 func GetUserDetails (w http.ResponseWriter, r *http.Request) {
-	username := r.URL.Query().Get("username")
-	if username == "" {
-		http.Error(w, "Username is required", http.StatusBadRequest)
-		return
-	}
+    username, ok := middleware.GetUsernameFromContext(r)
+    if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
+        return
+    }
 
 	// Start a transaction
 	tx, err := config.DB.Begin()
@@ -63,7 +64,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		// Username        string `json:"username"`
+		Username        string `json:"username"`
 		GroupName       string `json:"group_name"`
 		GroupDescription string `json:"group_description"`
 		GroupType       string `json:"group_type"` // "OTS", "Grey Group", etc.
@@ -90,7 +91,14 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Begin a transaction
+	// authenticated user
+    username, ok := middleware.GetUsernameFromContext(r)
+    if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
+        return
+    }
+
+    // Begin a transaction
 	tx, err := config.DB.Begin()
 	if err != nil {
 		http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
@@ -102,7 +110,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	err = tx.QueryRow(
 		"INSERT INTO groups (group_name, group_description, group_type, admin_username) "+
 			"VALUES ($1, $2, $3, $4) RETURNING group_id",
-		req.GroupName, req.GroupDescription, groupType, Username,
+		req.GroupName, req.GroupDescription, groupType, req.Username,
 	).Scan(&groupID)
 	if err != nil {
 		tx.Rollback()
@@ -114,7 +122,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	if groupType == 0 {
 		_, err = tx.Exec(
 			"INSERT INTO ots_group_participants (group_id, user_name) VALUES ($1, $2)",
-			groupID, Username,
+			groupID, req.Username,
 		)
 		if err != nil {
 			tx.Rollback()
@@ -127,7 +135,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	// Insert the admin into the group_participants table
 	_, err = tx.Exec(
 		"INSERT INTO group_participants (group_id, participant) VALUES ($1, $2)",
-		groupID, Username,
+		groupID, req.Username,
 	)
 	if err != nil {
 		tx.Rollback()
@@ -154,7 +162,6 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var req struct {
-		Username         string `json:"username"`
 		Username2        string `json:"username_2"`
 		GroupDescription string `json:"group_description"`
 	}
@@ -164,8 +171,14 @@ func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if both usernames are the same
-	if req.Username == req.Username2 {
+	username, ok := middleware.GetUsernameFromContext(r)
+    if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
+        return
+    }
+
+    // Check if both usernames are the same
+    if username == req.Username2 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -186,7 +199,7 @@ func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 	var exists int
 
 	// Check if both users exist
-	for _, user := range []string{req.Username, req.Username2} {
+	for _, user := range []string{username, req.Username2} {
 		err = tx.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", user).Scan(&exists)
 		if err != nil || exists == 0 {
 			w.Header().Set("Content-Type", "application/json")
@@ -200,21 +213,21 @@ func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create group name
-	groupName := fmt.Sprintf("%s-%s", req.Username, req.Username2)
+	groupName := fmt.Sprintf("%s-%s", username, req.Username2)
 
 	// Insert into groups table
 	var groupID uuid.UUID
 	err = tx.QueryRow(`
 		INSERT INTO groups (group_name, group_description, group_type, admin_username)
 		VALUES ($1, $2, 3, $3) RETURNING group_id
-	`, groupName, req.GroupDescription, req.Username).Scan(&groupID)
+	`, groupName, req.GroupDescription, username).Scan(&groupID)
 	if err != nil {
 		http.Error(w, "Failed to create group", http.StatusInternalServerError)
 		return
 	}
 
 	// Insert participants
-	for _, participant := range []string{req.Username, req.Username2} {
+	for _, participant := range []string{username, req.Username2} {
 		_, err = tx.Exec(`
 			INSERT INTO group_participants (group_id, participant)
 			VALUES ($1, $2)
@@ -251,7 +264,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 
 
 	var req struct {
-		// Username   string `json:"username"`
+		Username   string `json:"username"`
 		InviteCode string `json:"invite_code"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -259,7 +272,11 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
+	username, ok := middleware.GetUsernameFromContext(r)
+    if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
+        return
+    }
 	// Start transaction
 	tx, err := config.DB.Begin()
 	if err != nil {
@@ -301,7 +318,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 	var exists int
 	err = tx.QueryRow(`
 		SELECT COUNT(*) FROM group_participants WHERE group_id = $1 AND participant = $2
-	`, groupID, Username).Scan(&exists)
+	`, groupID, req.Username).Scan(&exists)
 	if err != nil {
 		http.Error(w, "Failed to check existing membership", http.StatusInternalServerError)
 		return
@@ -320,7 +337,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 	_, err = tx.Exec(`
 		INSERT INTO group_participants (group_id, participant)
 		VALUES ($1, $2)
-	`, groupID, Username)
+	`, groupID, req.Username)
 	if err != nil {
 		log.Println("Error inserting into group_participants:", err)
 		http.Error(w, "Failed to add to group_participants", http.StatusInternalServerError)
@@ -332,7 +349,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 		_, err = tx.Exec(`
 			INSERT INTO ots_group_participants (group_id, user_name)
 			VALUES ($1, $2)
-		`, groupID, Username)
+		`, groupID, req.Username)
 		if err != nil {
 			http.Error(w, "Failed to add to ots_group_participants", http.StatusInternalServerError)
 			return
@@ -356,12 +373,9 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 
 func GetTransactionHistory(w http.ResponseWriter, r *http.Request) {
     // Parse request body
-    var req struct {
-        Username string `json:"username"`
-    }
-    err := json.NewDecoder(r.Body).Decode(&req)
-    if err != nil {
-        http.Error(w, "Invalid request body", http.StatusBadRequest)
+    username, ok := middleware.GetUsernameFromContext(r)
+    if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
         return
     }
 
@@ -381,7 +395,7 @@ func GetTransactionHistory(w http.ResponseWriter, r *http.Request) {
             timestamp
         FROM completed_transactions
         WHERE sender = $1 OR receiver = $1;
-    `, req.Username)
+    `, username)
     if err != nil {
         http.Error(w, "Failed to fetch transaction history", http.StatusInternalServerError)
         return

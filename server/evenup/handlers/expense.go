@@ -14,11 +14,12 @@ import(
 	"github.com/emirpasic/gods/utils"
 	"database/sql"
 	"errors"
+	"github.com/anshikag020/EvenUp/server/evenup/middleware"
+	"time"
 )
 
 type AddExpenseRequest struct {
 	GroupID      string             `json:"group_id"`
-	Username     string             `json:"username"`
 	Description  string             `json:"description"`
 	Amount       float64            `json:"amount"`
 	Tag          string             `json:"tag"` // One tag string
@@ -111,6 +112,12 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	var req AddExpenseRequest
 	var err error
 	responded := false
+
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		json.NewEncoder(w).Encode(AddExpenseResponse{Status:false, Message:"User not authorized"})
+		return
+	}
 
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		json.NewEncoder(w).Encode(AddExpenseResponse{
@@ -235,7 +242,7 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		INSERT INTO expenses (group_id, description, tag, added_by, amount)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING expense_id
-	`, req.GroupID, req.Description, tagInt, req.Username, req.Amount).Scan(&expenseID)
+	`, req.GroupID, req.Description, tagInt, username, req.Amount).Scan(&expenseID)
 	if err != nil {
 		log.Println("Error inserting expense:", err)
 		json.NewEncoder(w).Encode(AddExpenseResponse{
@@ -315,7 +322,7 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		payload, _ := json.Marshal(map[string]interface{}{
 			"type":     "expense_added",
 			"group_id": req.GroupID,
-			"by":       req.Username,
+			"by":       username,
 			"amount":   req.Amount,
 		})
 		pubsub.NotifyExpense(WS, payload)
@@ -449,160 +456,367 @@ func min(a, b float64) float64 {
 	return b
 }
 
+type deleteExpenseRequest struct {
+	ExpenseID string `json:"expense_id"`
+}
 
+type deleteExpenseResponse struct {
+	Status  bool   `json:"status"`
+	Message string `json:"message"`
+}
+
+// -------------------- HTTP handler --------------------
+
+// DELETE /api/delete_expense
 func DeleteExpenseHandler(w http.ResponseWriter, r *http.Request) {
-    var req struct {
-        ExpenseID string `json:"expense_id"`
-        Username  string `json:"username"`
-        Cookie    string `json:"cookie"`
-    }
-    _ = json.NewDecoder(r.Body).Decode(&req)
+	var req deleteExpenseRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, false, "Malformed JSON body")
+		return
+	}
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		respond(w, false, "User not authorized")
+		return
+	}
+	if req.ExpenseID == "" {
+		respond(w, false, "expense_id is required")
+		return
+	}
 
-    // Start transaction
-    tx, err := config.DB.Begin()
-    if err != nil {
-        respondWithError(w, "Failed to start transaction")
-        return
-    }
-    defer func() {
-        if p := recover(); p != nil {
-            tx.Rollback()
-            panic(p)
-        } else if err != nil {
-            tx.Rollback()
-        }
-    }()
+	tx, err := config.DB.Begin()
+	if err != nil {
+		log.Println("could not start tx:", err)
+		respond(w, false, "Internal server error")
+		return
+	}
+	// make sure we leave the DB in a clean state
+	defer func() {
+		// if Commit was not reached, tx.Rollback returns sql.ErrTxDone (safe to ignore)
+		_ = tx.Rollback()
+	}()
 
-    // Step 2: Find group_id
-    var groupID string
-    err = tx.QueryRow(`SELECT group_id FROM expenses WHERE expense_id = $1`, req.ExpenseID).Scan(&groupID)
-    if err == sql.ErrNoRows {
-        respondWithError(w, "Expense not found")
-        return
-    } else if err != nil {
-        respondWithError(w, "Database error")
-        return
-    }
+	//-------------------------------------------------------
+	// 1. locate the group that owns this expense
+	//-------------------------------------------------------
+	var groupID string
+	err = tx.QueryRow(`
+		SELECT group_id
+		FROM expenses
+		WHERE expense_id = $1
+	`, req.ExpenseID).Scan(&groupID)
 
-    // Step 3: Check if user is part of the group
-    var exists bool
-    err = tx.QueryRow(`
-        SELECT EXISTS(
-            SELECT 1 FROM group_participants
-            WHERE group_id = $1 AND participant = $2
-        )
-    `, groupID, req.Username).Scan(&exists)
-    if err != nil || !exists {
-        respondWithError(w, "You are not part of the group")
-        return
-    }
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		respond(w, false, "Expense not found")
+		return
+	case err != nil:
+		log.Println("query group_id:", err)
+		respond(w, false, "Internal server error")
+		return
+	}
 
-    // Step 4: Get users involved in the expense
-    rows, err := tx.Query(`
-        SELECT username, amount_contributed, amount_owed
-        FROM bill_split
-        WHERE expense_id = $1
-    `, req.ExpenseID)
-    if err != nil {
-        respondWithError(w, "Error fetching bill split")
-        return
-    }
-    defer rows.Close()
+	//-------------------------------------------------------
+	// 2. make sure the requesting user is in the group
+	//-------------------------------------------------------
+	if err = tx.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1
+			FROM group_participants
+			WHERE group_id = $1 AND participant = $2
+		)
+	`, groupID, username).Scan(&ok); err != nil {
+		log.Println("user membership check:", err)
+		respond(w, false, "Internal server error")
+		return
+	}
+	if !ok {
+		respond(w, false, "You are not a member of this group")
+		return
+	}
 
-    type UserAmounts struct {
-        Username          string
-        AmountContributed float64
-        AmountOwed        float64
-    }
-    var usersInExpense []UserAmounts
-    for rows.Next() {
-        var ua UserAmounts
-        err = rows.Scan(&ua.Username, &ua.AmountContributed, &ua.AmountOwed)
-        if err != nil {
-            respondWithError(w, "Error scanning bill split")
-            return
-        }
-        if ua.AmountContributed != 0 || ua.AmountOwed != 0 {
-            usersInExpense = append(usersInExpense, ua)
-        }
-    }
+	//-------------------------------------------------------
+	// 3. gather bill_split rows for the expense
+	//-------------------------------------------------------
+	rows, err := tx.Query(`
+		SELECT username, amount_contributed, amount_owed
+		FROM bill_split
+		WHERE expense_id = $1
+	`, req.ExpenseID)
+	if err != nil {
+		log.Println("bill_split fetch:", err)
+		respond(w, false, "Internal server error")
+		return
+	}
+	defer rows.Close()
 
-    // Step 5: Verify all involved users are still in the group
-    usernames := []string{}
-    for _, ua := range usersInExpense {
-        usernames = append(usernames, ua.Username)
-    }
+	netChanges := make(map[string]float64) // username -> delta
+	involved   := make([]string, 0, 8)     // to test membership later
 
-    rows2, err := tx.Query(`
-        SELECT participant
-        FROM group_participants
-        WHERE group_id = $1 AND participant = ANY($2)
-    `, groupID, pq.Array(usernames))
-    if err != nil {
-        respondWithError(w, "Error fetching participants")
-        return
-    }
-    defer rows2.Close()
+	for rows.Next() {
+		var user string
+		var contributed, owed float64
+		if err = rows.Scan(&user, &contributed, &owed); err != nil {
+			log.Println("scan bill_split:", err)
+			respond(w, false, "Internal server error")
+			return
+		}
+		// record user so we can verify membership in step 4
+		involved = append(involved, user)
 
-    participantsSet := make(map[string]bool)
-    for rows2.Next() {
-        var participant string
-        _ = rows2.Scan(&participant)
-        participantsSet[participant] = true
-    }
+		// *** reverse the original posting ***
+		// original posting was: delta = contributed - owed
+		// so to undo:          delta = owed - contributed
+		netChanges[user] += owed - contributed
+	}
+	if err = rows.Err(); err != nil {
+		log.Println("iterate bill_split:", err)
+		respond(w, false, "Internal server error")
+		return
+	}
 
-    // Ensure all involved users are still participants
-    for _, ua := range usersInExpense {
-        if !participantsSet[ua.Username] {
-            respondWithError(w, "Cannot delete expense. Some member has left the group")
-            return
-        }
-    }
+	//-------------------------------------------------------
+	// 4. ensure every involved user is still in the group
+	//-------------------------------------------------------
+	for _, u := range involved {
+		if err = tx.QueryRow(`
+			SELECT EXISTS (
+				SELECT 1
+				FROM group_participants
+				WHERE group_id = $1 AND participant = $2
+			)
+		`, groupID, u).Scan(&ok); err != nil {
+			log.Println("membership check:", err)
+			respond(w, false, "Internal server error")
+			return
+		}
+		if !ok {
+			respond(w, false, "Cannot delete expense. Some member has left the group")
+			return
+		}
+	}
 
-    // Step 6: Calculate net changes for each user
-    netChanges := make(map[string]float64)
-    for _, ua := range usersInExpense {
-        if ua.AmountContributed != 0 {
-            netChanges[ua.Username] -= ua.AmountContributed
-        }
-        if ua.AmountOwed != 0 {
-            netChanges[ua.Username] += ua.AmountOwed
-        }
-    }
+	//-------------------------------------------------------
+	// 5. actually delete the expense (CASCADE removes bill_split rows)
+	//-------------------------------------------------------
+	if _, err = tx.Exec(`
+		DELETE FROM expenses
+		WHERE expense_id = $1
+	`, req.ExpenseID); err != nil {
+		log.Println("delete expenses row:", err)
+		respond(w, false, "Internal server error")
+		return
+	}
 
-    // Step 7: Optimise balances based on net changes
-    err = OptimiseBalances(tx, groupID, netChanges)
-    if err != nil {
-        respondWithError(w, "Failed to optimise balances")
-        return
-    }
+	//-------------------------------------------------------
+	// 6. re-optimise balances inside the SAME tx
+	//-------------------------------------------------------
+	if err = OptimiseBalances(tx, groupID, netChanges); err != nil {
+		log.Println("optimise balances:", err)
+		respond(w, false, "Internal server error")
+		return
+	}
 
-    // Step 8: Delete the expense
-    _, err = tx.Exec(`DELETE FROM expenses WHERE expense_id = $1`, req.ExpenseID)
-    if err != nil {
-        respondWithError(w, "Failed to delete expense")
-        return
-    }
+	//-------------------------------------------------------
+	// 7. all good - commit!
+	//-------------------------------------------------------
+	if err = tx.Commit(); err != nil {
+		log.Println("commit failed:", err) // Rollback in defer will be a no-op
+		respond(w, false, "Internal server error")
+		return
+	}
 
-    // Step 9: Commit transaction
-    err = tx.Commit()
-    if err != nil {
-        respondWithError(w, "Failed to commit transaction")
-        return
-    }
-
-    // Step 10: Respond with success
-    respondWithJSON(w, true, "Expense deleted successfully")
+	respond(w, true, "Expense deleted successfully")
 }
 
-func respondWithError(w http.ResponseWriter, message string) {
-    respondWithJSON(w, false, message)
+// -------------------- helpers --------------------
+
+func respond(w http.ResponseWriter, status bool, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(deleteExpenseResponse{
+		Status:  status,
+		Message: msg,
+	})
 }
 
-func respondWithJSON(w http.ResponseWriter, status bool, message string) {
-    json.NewEncoder(w).Encode(map[string]interface{}{
-        "status":  status,
-        "message": message,
-    })
+
+
+func intToTag(t int) string {
+	switch t {
+	case 0:
+		return "food"
+	case 1:
+		return "transport"
+	case 2:
+		return "entertainment"
+	case 3:
+		return "shopping"
+	case 4:
+		return "bills"
+	default:
+		return "other"
+	}
 }
 
+// --------------------------------------------------------------------
+// GET /api/get_expense_details
+type getExpenseDetailsReq struct {
+	ExpenseID string `json:"expense_id"`
+}
+
+type getExpenseDetailsResp struct {
+	Status       bool               `json:"status"`
+	Description  string             `json:"description,omitempty"`
+	Tag          string             `json:"tag,omitempty"`
+	LastModified string             `json:"last_modified,omitempty"`
+	PaidBy       map[string]float64 `json:"paid_by,omitempty"`
+	OwedBy       map[string]float64 `json:"owed_by,omitempty"`
+	Amount       float64            `json:"amount,omitempty"`
+	Message      string             `json:"message,omitempty"` // only on failures
+}
+
+func GetExpenseDetails(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	//-----------------------------------------------------------------
+	// 0.  auth  -------------------------------------------------------
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		json.NewEncoder(w).Encode(getExpenseDetailsResp{
+			Status:  false,
+			Message: "User not authorized",
+		})
+		return
+	}
+
+	//-----------------------------------------------------------------
+	// 1.  parse JSON body  -------------------------------------------
+	var req getExpenseDetailsReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ExpenseID == "" {
+		json.NewEncoder(w).Encode(getExpenseDetailsResp{
+			Status:  false,
+			Message: "Malformed JSON body",
+		})
+		return
+	}
+
+	//-----------------------------------------------------------------
+	// 2.  open tx (read-only)  ---------------------------------------
+	tx, err := config.DB.Begin()
+	if err != nil {
+		log.Println("could not start tx:", err)
+		json.NewEncoder(w).Encode(getExpenseDetailsResp{
+			Status:  false,
+			Message: "Internal server error",
+		})
+		return
+	}
+	defer tx.Rollback()
+
+	//-----------------------------------------------------------------
+	// 3.  fetch expense row  -----------------------------------------
+	var (
+		groupID           string
+		description       string
+		tagInt            int
+		timestamp         time.Time
+		totalAmount       float64
+	)
+	err = tx.QueryRow(`
+		SELECT group_id, description, tag, timestamp, amount
+		FROM expenses
+		WHERE expense_id = $1
+	`, req.ExpenseID).Scan(&groupID, &description, &tagInt, &timestamp, &totalAmount)
+
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		json.NewEncoder(w).Encode(getExpenseDetailsResp{
+			Status:  false,
+			Message: "Expense not found",
+		})
+		return
+	case err != nil:
+		log.Println("query expense:", err)
+		json.NewEncoder(w).Encode(getExpenseDetailsResp{
+			Status:  false,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	//-----------------------------------------------------------------
+	// 4.  ensure caller is still in that group -----------------------
+	var inGroup bool
+	if err = tx.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1
+			FROM group_participants
+			WHERE group_id = $1 AND participant = $2
+		)
+	`, groupID, username).Scan(&inGroup); err != nil || !inGroup {
+		json.NewEncoder(w).Encode(getExpenseDetailsResp{
+			Status:  false,
+			Message: "You are not a member of this group",
+		})
+		return
+	}
+
+	//-----------------------------------------------------------------
+	// 5.  gather bill_split rows  ------------------------------------
+	rows, err := tx.Query(`
+		SELECT username, amount_contributed, amount_owed
+		FROM bill_split
+		WHERE expense_id = $1
+	`, req.ExpenseID)
+	if err != nil {
+		log.Println("bill_split:", err)
+		json.NewEncoder(w).Encode(getExpenseDetailsResp{
+			Status:  false,
+			Message: "Internal server error",
+		})
+		return
+	}
+	defer rows.Close()
+
+	paidBy := make(map[string]float64)
+	owedBy := make(map[string]float64)
+
+	for rows.Next() {
+		var u string
+		var contrib, owed float64
+		if err = rows.Scan(&u, &contrib, &owed); err != nil {
+			log.Println("scan:", err)
+			json.NewEncoder(w).Encode(getExpenseDetailsResp{
+				Status:  false,
+				Message: "Internal server error",
+			})
+			return
+		}
+		if contrib != 0 {
+			paidBy[u] = contrib
+		}
+		if owed != 0 {
+			owedBy[u] = owed
+		}
+	}
+	if err = rows.Err(); err != nil {
+		log.Println("rows err:", err)
+		json.NewEncoder(w).Encode(getExpenseDetailsResp{
+			Status:  false,
+			Message: "Internal server error",
+		})
+		return
+	}
+
+	//-----------------------------------------------------------------
+	// 6.  success  ----------------------------------------------------
+	json.NewEncoder(w).Encode(getExpenseDetailsResp{
+		Status:       true,
+		Description:  description,
+		Tag:          intToTag(tagInt),
+		LastModified: timestamp.Format(time.RFC3339),
+		PaidBy:       paidBy,
+		OwedBy:       owedBy,
+		Amount:       totalAmount,
+	})
+}

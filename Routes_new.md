@@ -252,9 +252,12 @@ We can use this to store the session values in the cookie (backend).
 {  
   "status": "bool",         // like: true: Success, false: Failure
   "groups": [
-    "group_name" : "string",
-    "members" : "int",
-    "group_id": "string"
+			"name":       "string",
+			"size":        "int",
+			"groupID":     "string",
+			"description": "string",
+			"inviteCode":  "string",
+			"groupType":   "string", // like: "OTS", "Grey Group", "Normal Group", "Private-Split"
     ]
 }
 ```
@@ -530,7 +533,7 @@ We can use this to store the session values in the cookie (backend).
 
 ## Expenses
 
-### 22. GET EXPENSE DETAILS
+### 22. GET EXPENSE DETAILS   (done)
 **Route**: ```/api/get_expense_details```\
 **METHOD**: ```GET```\
 **Description**: Used for getting expense details.\
@@ -556,7 +559,7 @@ We can use this to store the session values in the cookie (backend).
 
 
 // some more checks have to be done..look into the test plan
-### 23. ADD EXPENSE
+### 23. ADD EXPENSE     (done)
 **Route**: ```/api/add_expense```\
 **METHOD**: ```PUT```\
 **Description**: Used for adding an expense.\
@@ -587,7 +590,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 24. DELETE EXPENSE
+### 24. DELETE EXPENSE  (done)
 **Route**: ```/api/delete_expense```\
 **METHOD**: ```DELETE```\
 **Description**: Used for deleting an expense.\
@@ -606,6 +609,7 @@ We can use this to store the session values in the cookie (backend).
   "message": "string"       // like: "Expense deleted successfully", "Group not found", "Expense not found", "User not found", "Some user has left the group"
 }
 ```
+
 
 
 
