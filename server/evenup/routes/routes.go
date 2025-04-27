@@ -40,4 +40,8 @@ func RegisterRoutes(router *mux.Router) {
 
 	// Expenses routes
 	router.HandleFunc("/api/add_expense", handlers.AddExpenseHandler).Methods("PUT")
+
+
+	router.HandleFunc("/api/send_reminder", handlers.SendGroupReminder).Methods("POST")
+
 }
