@@ -849,15 +849,19 @@ type GetExpensesResponse struct {
 }
 
 
+// GetExpenses returns the list of expenses for a group,
+// filtering by the current user for grey‐type groups.
 func GetExpenses(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 
+    // 1) Auth
     username, ok := middleware.GetUsernameFromContext(r)
     if !ok {
         http.Error(w, "User not authorized", http.StatusUnauthorized)
         return
     }
 
+    // 2) Decode request
     var req GetExpensesRequest
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
         w.WriteHeader(http.StatusBadRequest)
@@ -868,7 +872,7 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // validate UUID
+    // 3) Validate group_id
     groupUUID, err := uuid.Parse(req.GroupID)
     if err != nil {
         w.WriteHeader(http.StatusBadRequest)
@@ -879,36 +883,39 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // 4) Begin transaction
     tx, err := config.DB.Begin()
     if err != nil {
+        log.Println("could not start tx:", err)
         http.Error(w, "Server error", http.StatusInternalServerError)
         return
     }
     defer tx.Rollback()
 
-    // 1) fetch group type
+    // 5) Fetch group_type
     var groupType int
-    err = tx.QueryRow(`
+    if err := tx.QueryRow(`
         SELECT group_type
         FROM groups
         WHERE group_id = $1
-    `, groupUUID).Scan(&groupType)
-    if err == sql.ErrNoRows {
-        json.NewEncoder(w).Encode(GetExpensesResponse{
-            Status:  false,
-            Message: "Group not found",
-        })
-        return
-    } else if err != nil {
+    `, groupUUID).Scan(&groupType); err != nil {
+        if err == sql.ErrNoRows {
+            json.NewEncoder(w).Encode(GetExpensesResponse{
+                Status:  false,
+                Message: "Group not found",
+            })
+            return
+        }
+        log.Println("query group_type:", err)
         http.Error(w, "Server error", http.StatusInternalServerError)
         return
     }
 
-    // 2) fetch expenses
-    var rows *sql.Rows
+    // 6) First pass: gather all expense metadata
+    var metaRows *sql.Rows
     if groupType == 1 {
-        // Grey group: only those where user paid or owed
-        rows, err = tx.Query(`
+        // Grey group: only expenses this user touched
+        metaRows, err = tx.Query(`
             SELECT e.expense_id, e.description, e.tag, e.added_by, e.amount
             FROM expenses e
             JOIN bill_split bs ON bs.expense_id = e.expense_id
@@ -918,8 +925,8 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
             ORDER BY e.timestamp
         `, groupUUID, username)
     } else {
-        // all other groups: everyone sees every expense
-        rows, err = tx.Query(`
+        // Others: all expenses
+        metaRows, err = tx.Query(`
             SELECT expense_id, description, tag, added_by, amount
             FROM expenses
             WHERE group_id = $1
@@ -927,45 +934,61 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
         `, groupUUID)
     }
     if err != nil {
+        log.Println("query expenses:", err)
         http.Error(w, "Server error", http.StatusInternalServerError)
         return
     }
-    defer rows.Close()
 
-    var expenses []Expense
-    for rows.Next() {
+    // Read into a slice, then close rows
+    var prelim []Expense
+    for metaRows.Next() {
         var e Expense
         var tagInt int
-        if err := rows.Scan(
+        if err := metaRows.Scan(
             &e.ExpenseID,
             &e.Description,
             &tagInt,
             &e.LastModified,
             &e.Amount,
         ); err != nil {
+            metaRows.Close()
+            log.Println("scan expenses:", err)
             http.Error(w, "Server error", http.StatusInternalServerError)
             return
         }
         e.Tag = intToTag(tagInt)
+        prelim = append(prelim, e)
+    }
+    if err := metaRows.Err(); err != nil {
+        metaRows.Close()
+        log.Println("iterate expenses:", err)
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+    metaRows.Close()
 
-        // now fetch bill_split rows for this expense
-        bsRows, err := tx.Query(`
+    // 7) Second pass: for each expense, fetch its bill_split rows
+    for i := range prelim {
+        e := &prelim[i]
+        splitRows, err := tx.Query(`
             SELECT username, amount_contributed, amount_owed
             FROM bill_split
             WHERE expense_id = $1
         `, e.ExpenseID)
         if err != nil {
+            log.Println("query bill_split:", err)
             http.Error(w, "Server error", http.StatusInternalServerError)
             return
         }
 
         e.PaidBy = make(map[string]float64)
         e.OwedBy = make(map[string]float64)
-        for bsRows.Next() {
+        for splitRows.Next() {
             var user string
             var contrib, owed float64
-            if err := bsRows.Scan(&user, &contrib, &owed); err != nil {
-                bsRows.Close()
+            if err := splitRows.Scan(&user, &contrib, &owed); err != nil {
+                splitRows.Close()
+                log.Println("scan bill_split:", err)
                 http.Error(w, "Server error", http.StatusInternalServerError)
                 return
             }
@@ -976,22 +999,23 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
                 e.OwedBy[user] = owed
             }
         }
-        bsRows.Close()
-
-        expenses = append(expenses, e)
+        splitRows.Close()
+        if err := splitRows.Err(); err != nil {
+            log.Println("iterate bill_split:", err)
+            http.Error(w, "Server error", http.StatusInternalServerError)
+            return
+        }
     }
-    if err := rows.Err(); err != nil {
-        http.Error(w, "Server error", http.StatusInternalServerError)
-        return
-    }
 
+    // 8) Commit & reply
     if err := tx.Commit(); err != nil {
+        log.Println("commit failed:", err)
         http.Error(w, "Server error", http.StatusInternalServerError)
         return
     }
 
     json.NewEncoder(w).Encode(GetExpensesResponse{
         Status:   true,
-        Expenses: expenses,
+        Expenses: prelim,
     })
 }
