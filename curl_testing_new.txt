@@ -1,0 +1,15 @@
+1. Signup
+
+curl -X POST http://localhost:8080/api/signup \
+     -H "Content-Type: application/json" \
+     -d '{
+           "username": "alice123",
+           "name":     "Alice Johnson",
+           "email":    "alicehehe@example.com",
+           "password": "S3cureP@ss!"
+         }'
+
+
+
+
+
