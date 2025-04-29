@@ -154,7 +154,7 @@ func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var req struct {
 		Username2        string `json:"username_2"`
-		GroupDescription string `json:"group_description"`
+		// GroupDescription string `json:"group_description"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -211,7 +211,7 @@ func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 	err = tx.QueryRow(`
 		INSERT INTO groups (group_name, group_description, group_type, admin_username)
 		VALUES ($1, $2, 3, $3) RETURNING group_id
-	`, groupName, req.GroupDescription, username).Scan(&groupID)
+	`, groupName, "This is a Private Split", username).Scan(&groupID)
 	if err != nil {
 		http.Error(w, "Failed to create group", http.StatusInternalServerError)
 		return
