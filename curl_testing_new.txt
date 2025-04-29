@@ -22,13 +22,43 @@ curl -X POST http://localhost:8080/api/login \
 
 3. Join Group
 
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NjkxNzIsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.m4YV_CAJqt0CyBZ11JSqvwnmzymgSnC3AillFhG66Xg"
+export INVITE_CODE="VFRp3IMl"
+
+curl -X POST http://localhost:8080/api/join_group \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer $TOKEN" \
+     -d '{
+           "invite_code": "'"${INVITE_CODE}"'"
+         }'
 
 
+4. Add expense
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NjkxNzIsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.m4YV_CAJqt0CyBZ11JSqvwnmzymgSnC3AillFhG66Xg"
+export GROUP_ID="9d25979b-42c5-4cbb-8bd5-897c4cb2076a"
 
-3. Get expenses of a group
+curl -X POST http://localhost:8080/api/add_expense \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer $TOKEN" \
+     -d '{
+           "group_id": "'"${GROUP_ID}"'",
+           "description": "Dinner at Luigi’s",
+           "amount": 120.50,
+           "tag": "food",
+           "split_between": {
+             "alice123": 60.25,
+             "bob02":   60.25
+           },
+           "paid_by": {
+             "alice123": 120.50
+           }
+         }'
+
+
+5. Get expenses of a group
 
 export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NjkxNzIsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.m4YV_CAJqt0CyBZ11JSqvwnmzymgSnC3AillFhG66Xg"
-export GROUP_ID="550e8400-e29b-41d4-a716-446655440000"
+export GROUP_ID="9d25979b-42c5-4cbb-8bd5-897c4cb2076a"
 
 curl -X POST http://localhost:8080/api/get_expenses \
      -H "Content-Type: application/json" \
@@ -36,3 +66,15 @@ curl -X POST http://localhost:8080/api/get_expenses \
      -d '{
            "group_id": "'"${GROUP_ID}"'"
          }'
+
+6. Get balances of a group
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NjkxNzIsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.m4YV_CAJqt0CyBZ11JSqvwnmzymgSnC3AillFhG66Xg"
+GROUP_ID="9d25979b-42c5-4cbb-8bd5-897c4cb2076a"
+
+curl -X POST http://localhost:8080/api/get_balances \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+        "group_id": "'"$GROUP_ID"'"
+      }'
+
