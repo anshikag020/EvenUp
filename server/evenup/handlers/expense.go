@@ -16,6 +16,7 @@ import(
 	"errors"
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"time"
+	"github.com/google/uuid"
 )
 
 type AddExpenseRequest struct {
@@ -823,4 +824,174 @@ func GetExpenseDetails(w http.ResponseWriter, r *http.Request) {
 		OwedBy:       owedBy,
 		Amount:       totalAmount,
 	})
+}
+
+
+
+type Expense struct {
+    ExpenseID    string             `json:"expense_id"`
+    Description  string             `json:"description"`
+    Tag          string             `json:"tag"`
+    LastModified string             `json:"last_modified"` // added_by user
+    PaidBy       map[string]float64 `json:"paid_by"`
+    OwedBy       map[string]float64 `json:"owed_by"`
+    Amount       float64            `json:"amount"`
+}
+
+type GetExpensesRequest struct {
+    GroupID string `json:"group_id"`
+}
+
+type GetExpensesResponse struct {
+    Status   bool      `json:"status"`
+    Expenses []Expense `json:"expenses"`
+    Message  string    `json:"message,omitempty"`
+}
+
+
+func GetExpenses(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+
+    username, ok := middleware.GetUsernameFromContext(r)
+    if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
+        return
+    }
+
+    var req GetExpensesRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(GetExpensesResponse{
+            Status:  false,
+            Message: "Malformed request body",
+        })
+        return
+    }
+
+    // validate UUID
+    groupUUID, err := uuid.Parse(req.GroupID)
+    if err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(GetExpensesResponse{
+            Status:  false,
+            Message: "Invalid group_id format",
+        })
+        return
+    }
+
+    tx, err := config.DB.Begin()
+    if err != nil {
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+    defer tx.Rollback()
+
+    // 1) fetch group type
+    var groupType int
+    err = tx.QueryRow(`
+        SELECT group_type
+        FROM groups
+        WHERE group_id = $1
+    `, groupUUID).Scan(&groupType)
+    if err == sql.ErrNoRows {
+        json.NewEncoder(w).Encode(GetExpensesResponse{
+            Status:  false,
+            Message: "Group not found",
+        })
+        return
+    } else if err != nil {
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+
+    // 2) fetch expenses
+    var rows *sql.Rows
+    if groupType == 1 {
+        // Grey group: only those where user paid or owed
+        rows, err = tx.Query(`
+            SELECT e.expense_id, e.description, e.tag, e.added_by, e.amount
+            FROM expenses e
+            JOIN bill_split bs ON bs.expense_id = e.expense_id
+            WHERE e.group_id = $1
+              AND bs.username = $2
+              AND (bs.amount_contributed <> 0 OR bs.amount_owed <> 0)
+            ORDER BY e.timestamp
+        `, groupUUID, username)
+    } else {
+        // all other groups: everyone sees every expense
+        rows, err = tx.Query(`
+            SELECT expense_id, description, tag, added_by, amount
+            FROM expenses
+            WHERE group_id = $1
+            ORDER BY timestamp
+        `, groupUUID)
+    }
+    if err != nil {
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+    defer rows.Close()
+
+    var expenses []Expense
+    for rows.Next() {
+        var e Expense
+        var tagInt int
+        if err := rows.Scan(
+            &e.ExpenseID,
+            &e.Description,
+            &tagInt,
+            &e.LastModified,
+            &e.Amount,
+        ); err != nil {
+            http.Error(w, "Server error", http.StatusInternalServerError)
+            return
+        }
+        e.Tag = intToTag(tagInt)
+
+        // now fetch bill_split rows for this expense
+        bsRows, err := tx.Query(`
+            SELECT username, amount_contributed, amount_owed
+            FROM bill_split
+            WHERE expense_id = $1
+        `, e.ExpenseID)
+        if err != nil {
+            http.Error(w, "Server error", http.StatusInternalServerError)
+            return
+        }
+
+        e.PaidBy = make(map[string]float64)
+        e.OwedBy = make(map[string]float64)
+        for bsRows.Next() {
+            var user string
+            var contrib, owed float64
+            if err := bsRows.Scan(&user, &contrib, &owed); err != nil {
+                bsRows.Close()
+                http.Error(w, "Server error", http.StatusInternalServerError)
+                return
+            }
+            if contrib != 0 {
+                e.PaidBy[user] = contrib
+            }
+            if owed != 0 {
+                e.OwedBy[user] = owed
+            }
+        }
+        bsRows.Close()
+
+        expenses = append(expenses, e)
+    }
+    if err := rows.Err(); err != nil {
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+
+    if err := tx.Commit(); err != nil {
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+
+    json.NewEncoder(w).Encode(GetExpensesResponse{
+        Status:   true,
+        Expenses: expenses,
+    })
 }

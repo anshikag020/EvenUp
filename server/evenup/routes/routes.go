@@ -99,5 +99,19 @@ router.Handle(
     middleware.AuthMiddleware(http.HandlerFunc(handlers.SendGroupReminder)),
 ).Methods("POST")
 
+router.Handle(
+    "/api/get_expenses",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.GetExpenses)),
+).Methods("POST")
+
+
+
+
+
+// Balances routes
+router.Handle(
+    "/api/get_balances",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.GetBalances)),
+).Methods("POST")
 
 }

@@ -566,6 +566,16 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 
 ## Expenses
 
+
+"status": "bool",         // like: true: Success, false: Failure
+  "description" : "string",
+  "tag" : "string",
+  "last_modified" : "string",
+  "paid_by" : ["string" : "float"],
+  "owed_by" : ["string" : "float"],
+  "amount" : "float"
+
+  
 ### 22. GET EXPENSE DETAILS   (done)
 **Route**: ```/api/get_expense_details```\
 **METHOD**: ```GET```\
