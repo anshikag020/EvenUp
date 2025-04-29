@@ -18,6 +18,7 @@ class PaidByDialog extends StatefulWidget {
 }
 
 class _PaidByDialogState extends State<PaidByDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   Map<String, TextEditingController> controllers = {};
   List<GroupMemberModel> filteredMembers = [];
   TextEditingController searchController = TextEditingController();
@@ -45,18 +46,24 @@ class _PaidByDialogState extends State<PaidByDialog> {
   }
 
   void _confirmSelection() {
-    Map<String, double> result = {};
-    controllers.forEach((key, controller) {
-      final text = controller.text.trim();
-      if (text.isNotEmpty) {
-        final amount = double.tryParse(text);
-        if (amount != null && amount > 0) {
-          result[key] = amount;
-        }
-      }
-    });
-    Navigator.of(context).pop(result);
+  if (!_formKey.currentState!.validate()) {
+    showOverlayNotification(context, "Fix input errors before confirming");
+    return;
   }
+
+  Map<String, double> result = {};
+  controllers.forEach((key, controller) {
+    final text = controller.text.trim();
+    if (text.isNotEmpty) {
+      final amount = double.tryParse(text);
+      if (amount != null && amount > 0) {
+        result[key] = amount;
+      }
+    }
+  });
+  Navigator.of(context).pop(result);
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -91,46 +98,52 @@ class _PaidByDialogState extends State<PaidByDialog> {
             const SizedBox(height: 10),
             SizedBox(
               height: 300,
-              child: ListView.builder(
-                itemCount: filteredMembers.length,
-                itemBuilder: (context, index) {
-                  final member = filteredMembers[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            member.name,
-                            style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 100,
-                          height: 40,
-                          child: TextField(
-                            controller: controllers[member.name],
-                            keyboardType: TextInputType.numberWithOptions(
-                              decimal: true,
+              child: Form(
+                key: _formKey,
+                child: ListView.builder(
+                  itemCount: filteredMembers.length,
+                  itemBuilder: (context, index) {
+                    final member = filteredMembers[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              member.name,
+                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textDark : AppColors.textLight),
                             ),
-                            style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
-                            decoration: InputDecoration(
-                              hintText: 'Amount',
-                              hintStyle: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white38 : AppColors.textLight),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 8,
+                          ),
+                          SizedBox(
+                            width: 100,
+                            // height: 40,
+                            child: TextFormField(
+                              controller: controllers[member.name],
+                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                              decoration: InputDecoration(
+                                hintText: 'Amount',
+                                hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white38 : AppColors.textLight),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                isDense: true,
+                                border: OutlineInputBorder(),
                               ),
-                              isDense: true,
-                              border: OutlineInputBorder(),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) return null;
+                                if (double.tryParse(value.trim()) == null) {
+                                  return 'Enter valid number';
+                                }
+                                return null;
+                              },
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
+
             ),
             const SizedBox(height: 20),
             Row(
@@ -406,32 +419,31 @@ class _SplitTypeDialogState extends State<SplitTypeDialog> {
 
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController = ScrollController();
+void initState() {
+  super.initState();
+  _scrollController = ScrollController();
 
-    final validTypes = ['Evenly', 'Unevenly', 'By Percentage'];
-    splitType = validTypes.contains(widget.initialSplitType)
-        ? widget.initialSplitType!
-        : 'Evenly';
+  final validTypes = ['Evenly', 'Unevenly', 'By Percentage'];
+  splitType = validTypes.contains(widget.initialSplitType)
+      ? widget.initialSplitType!
+      : 'Evenly';
 
-    for (var name in widget.selectedMembers) {
-      controllers[name] = TextEditingController();
+  for (var member in widget.members) {
+    final name = member.name;
+    double initialValue = widget.initialSplitDetails?[name] ?? 0.0;
 
-      if (widget.initialSplitDetails != null &&
-          widget.initialSplitDetails!.containsKey(name)) {
-        controllers[name]!.text = splitType == 'By Percentage'
-            ? widget.initialSplitDetails![name]!.toStringAsFixed(0)
-            : widget.initialSplitDetails![name]!.toStringAsFixed(2);
-      }
-    }
-
-    if (splitType == 'Evenly' &&
-        (widget.initialSplitDetails == null || widget.initialSplitDetails!.isEmpty)) {
-      _setEvenSplit();
-    }
+    controllers[name] = TextEditingController(
+      text: splitType == 'By Percentage'
+          ? initialValue.toStringAsFixed(0)
+          : initialValue.toStringAsFixed(2),
+    );
   }
 
+  if (splitType == 'Evenly' &&
+      (widget.initialSplitDetails == null || widget.initialSplitDetails!.isEmpty)) {
+    _setEvenSplit();
+  }
+}
 
   @override
   void dispose() {

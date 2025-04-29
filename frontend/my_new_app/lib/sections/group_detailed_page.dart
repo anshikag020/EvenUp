@@ -166,7 +166,7 @@ class GroupDetailScreen extends StatelessWidget {
               GestureDetector(
                 onTap: () {
                   GroupUtils.showGroupMembersDialog(
-                    context: context,
+                    context: context, 
                     groupId: groupID,
                   );
                 },

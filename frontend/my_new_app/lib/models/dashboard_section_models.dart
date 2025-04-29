@@ -11,9 +11,9 @@ class CreateGroupModel {
 
   factory CreateGroupModel.fromJson(Map<String, dynamic> json) {
     return CreateGroupModel(
-      groupName: json['groupName'],
-      groupDescription: json['groupDescription'],
-      groupType: json['groupType']
+      groupName: json['group_name'],
+      groupDescription: json['group_description'],
+      groupType: json['group_type']
     );
   }
 
@@ -25,6 +25,31 @@ class CreateGroupModel {
     };
   }
 }
+
+
+
+
+class CreatePrivateSplitModel {
+  final String otheruser; 
+
+  CreatePrivateSplitModel({
+    required this.otheruser,
+  });
+
+  factory CreatePrivateSplitModel.fromJson(Map<String, dynamic> json) {
+    return CreatePrivateSplitModel(
+      otheruser: json['username_2'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'username_2': otheruser,
+    };
+  }
+}
+
+
 
 
 class JoinGroupModel {

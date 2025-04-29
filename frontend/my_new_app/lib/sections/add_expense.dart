@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/models/add_expense_model.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
+import 'package:my_new_app/services/service%20interfaces/expense_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/add_expense_utils.dart';
@@ -33,6 +35,16 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   late GroupMemberService memberService;
   late List<GroupMemberModel> members = [];
 
+  // Expense type related
+  final List<String> expenseTypes = [
+    "Entertainment",
+    "Outing",
+    "Food",
+    "Travel",
+    "Others",
+  ];
+  String selectedExpenseType = "Entertainment";
+
   @override
   void initState() {
     super.initState();
@@ -50,10 +62,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   void _selectPaidBy() async {
     final result = await showDialog<Map<String, double>>(
       context: context,
-      builder: (_) => PaidByDialog(
-        members: members,
-        initialPaidBy: paidBy,
-      ),
+      builder: (_) => PaidByDialog(members: members, initialPaidBy: paidBy),
     );
     if (result != null) {
       setState(() {
@@ -66,10 +75,11 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   void _selectSplitBetween() async {
     final result = await showDialog<List<String>>(
       context: context,
-      builder: (_) => SplitBetweenDialog(
-        members: members,
-        selectedMembers: splitBetween,
-      ),
+      builder:
+          (_) => SplitBetweenDialog(
+            members: members,
+            selectedMembers: splitBetween,
+          ),
     );
     if (result != null) {
       setState(() {
@@ -81,21 +91,24 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
 
   void _selectSplitType(BuildContext context) async {
     if (splitBetween.isEmpty || totalAmount == 0.0) {
-      // showCustomSnackBar(widget.parentContext, "Select paid by and split between members first");
-      showOverlayNotification(widget.parentContext, "Select paid by and split between members first");
+      showOverlayNotification(
+        widget.parentContext,
+        "Select paid by and split between members first",
+      );
       return;
     }
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => SplitTypeDialog(
-        members: members,
-        selectedMembers: splitBetween,
-        totalAmount: totalAmount,
-        initialSplitType: splitType,
-        initialSplitDetails: splitDetails,
-        parentContext: widget.parentContext,
-      ),
+      builder:
+          (_) => SplitTypeDialog(
+            members: members,
+            selectedMembers: splitBetween,
+            totalAmount: totalAmount,
+            initialSplitType: splitType,
+            initialSplitDetails: splitDetails,
+            parentContext: widget.parentContext,
+          ),
     );
 
     if (result != null) {
@@ -112,22 +125,42 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
         splitBetween.isEmpty ||
         splitDetails.isEmpty ||
         splitType.isEmpty) {
-      // showCustomSnackBar(widget.parentContext, "Please fill in all required details");
-      showOverlayNotification(widget.parentContext, "Please fill in all required details");
-      
+      showOverlayNotification(
+        widget.parentContext,
+        "Please fill in all required details",
+      );
       return;
     }
 
+     // Replace with actual logic
+
+    final model = AddExpenseModel(
+      groupId: widget.groupID,
+      description: descriptionController.text.trim(),
+      amount: totalAmount,
+      tag: selectedExpenseType,
+      splitBetween: splitDetails,
+      paidBy: paidBy,
+    );
+
+    final AddExpenseService expenseService = locator<AddExpenseService>();
+    expenseService.sendExpense(model, context);
+
     Navigator.of(context).pop({
-      'description': descriptionController.text.trim(),
-      'paidBy': paidBy,
-      'amount': totalAmount,
-      'splitBetween': splitBetween,
+      'description': model.description,
+      'paidBy': model.paidBy,
+      'amount': model.amount,
+      'splitBetween': model.splitBetween.keys.toList(),
       'splitType': splitType,
-      'splitDetails': splitDetails,
+      'splitDetails': model.splitBetween,
+      'expenseType': model.tag,
     });
 
-    showCustomSnackBar(context, "New Expense Added", backgroundColor: const Color.fromARGB(255, 145, 169, 25)); 
+    // showCustomSnackBar(
+    //   context,
+    //   "New Expense Added",
+    //   backgroundColor: const Color.fromARGB(255, 145, 169, 25),
+    // );
   }
 
   Widget buildLabel(String text, Color color) {
@@ -140,13 +173,15 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
     );
   }
 
-  Widget buildAmountLine(String label, String value, VoidCallback onTap, Color color) {
+  Widget buildAmountLine(
+    String label,
+    String value,
+    VoidCallback onTap,
+    Color color,
+  ) {
     return ListTile(
       title: Text(label, style: TextStyle(color: color)),
-      trailing: ElevatedButton(
-        onPressed: onTap,
-        child: Text("Select"),
-      ),
+      trailing: ElevatedButton(onPressed: onTap, child: Text("Select")),
     );
   }
 
@@ -157,22 +192,23 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(20),
-      // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: LinearGradient(
-                colors: [Color.fromARGB(255, 193, 249, 39), Color(0xFF1E1E1E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            colors: [Color.fromARGB(255, 193, 249, 39), Color(0xFF1E1E1E)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            color:    Theme.of(context).brightness ==  Brightness.dark ? AppColors.searchBoxDark : AppColors.searchBoxLight,
+            color:
+                Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.searchBoxDark
+                    : AppColors.searchBoxLight,
           ),
           padding: EdgeInsets.all(width * 0.025),
           child: SingleChildScrollView(
@@ -184,39 +220,142 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                   "Add Expense",
                   style: GoogleFonts.poppins(
                     fontSize: 18,
-                    color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Divider(color:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white30 : AppColors.textLight),
+                Divider(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white30
+                          : AppColors.textLight,
+                ),
                 const SizedBox(height: 12),
-          
-                buildLabel("Description:",   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+
+                buildLabel(
+                  "Description:",
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textDark
+                      : AppColors.textLight,
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: descriptionController,
-                  style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                  style: TextStyle(
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
+                  ),
                   decoration: InputDecoration(
                     hintText: "Enter the description",
-                    hintStyle: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white38 : AppColors.textLight2),
+                    hintStyle: TextStyle(
+                      color:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white38
+                              : AppColors.textLight2,
+                    ),
                     filled: true,
                     fillColor: Colors.white10,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
-          
+
                 const SizedBox(height: 16),
-                buildAmountLine('Paid By', 'Select', _selectPaidBy,   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                buildLabel(
+                  "Expense Type:",
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textDark
+                      : AppColors.textLight,
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedExpenseType,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white10,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  dropdownColor:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.searchBoxDark
+                          : AppColors.searchBoxLight,
+                  style: TextStyle(
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
+                  ),
+                  items:
+                      expenseTypes.map((String type) {
+                        return DropdownMenuItem<String>(
+                          value: type,
+                          child: Text(type),
+                        );
+                      }).toList(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        selectedExpenseType = newValue;
+                      });
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 16),
+                buildAmountLine(
+                  'Paid By',
+                  'Select',
+                  _selectPaidBy,
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textDark
+                      : AppColors.textLight,
+                ),
                 ListTile(
-                  title: Text("Amount", style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight)),
+                  title: Text(
+                    "Amount",
+                    style: TextStyle(
+                      color:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textDark
+                              : AppColors.textLight,
+                    ),
+                  ),
                   trailing: Text(
                     '₹${totalAmount.toStringAsFixed(2)}',
-                    style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? Colors.white70 : AppColors.textLight, fontSize: width * 0.045),
+                    style: TextStyle(
+                      color:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white70
+                              : AppColors.textLight,
+                      fontSize: width * 0.045,
+                    ),
                   ),
                 ),
-                buildAmountLine('Split Between', 'Select', _selectSplitBetween,   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
-                buildAmountLine('Split Type', 'Select', () => _selectSplitType(context),   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
-          
+                buildAmountLine(
+                  'Split Between',
+                  'Select',
+                  _selectSplitBetween,
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textDark
+                      : AppColors.textLight,
+                ),
+                buildAmountLine(
+                  'Split Type',
+                  'Select',
+                  () => _selectSplitType(context),
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textDark
+                      : AppColors.textLight,
+                ),
+
                 const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -224,14 +363,17 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                     buildActionButton(
                       width,
                       "Add",
-                        Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenButtondarktheme : AppColors.greenButtonwhitetheme,
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.greenButtondarktheme
+                          : AppColors.greenButtonwhitetheme,
                       () => _confirmExpense(context),
-          
                     ),
                     buildActionButton(
                       width,
                       "Cancel",
-                        Theme.of(context).brightness ==  Brightness.dark ? AppColors.redbuttondarktheme : AppColors.redbuttonwhitetheme,
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.redbuttondarktheme
+                          : AppColors.redbuttonwhitetheme,
                       () => Navigator.of(context).pop(),
                     ),
                   ],

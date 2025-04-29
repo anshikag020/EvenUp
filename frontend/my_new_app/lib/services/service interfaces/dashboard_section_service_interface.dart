@@ -6,6 +6,10 @@ abstract class CreateGroupService {
   Future<void> createNewGroup(CreateGroupModel groupModel, BuildContext context);
 }
 
+abstract class CreatePrivateSplitService {
+  Future<void> createNewPrivateSplit(CreatePrivateSplitModel privateSplitModel, BuildContext context);
+}
+
 abstract class JoinGroupService {
   Future<void> joinGroupByCode(JoinGroupModel joinModel, BuildContext context);
 }

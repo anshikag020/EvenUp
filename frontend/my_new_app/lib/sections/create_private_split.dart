@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
+import 'package:my_new_app/models/dashboard_section_models.dart';
+import 'package:my_new_app/services/service%20interfaces/dashboard_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
-import 'package:my_new_app/utils/general_utils.dart';
+// import 'package:my_new_app/utils/general_utils.dart';
 import 'package:my_new_app/utils/join_group_utils.dart';
 
 class CreatePrivateSplit extends StatefulWidget {
@@ -50,14 +53,26 @@ class _CreatePrivateSplitState extends State<CreatePrivateSplit> {
                     context: context,
                     builder: (context) => ConfirmationDialog(
                       message: 'Are you sure you want to create this private-split?',
-                      onConfirm: () {
+                      onConfirm: () async {
                         // handle logic here
+
+                                final newSplit = CreatePrivateSplitModel(
+                                  otheruser: _splitNameController.text.trim() 
+                                );
+
+                                final CreatePrivateSplitService splitService =
+                                    locator<CreatePrivateSplitService>();
+                                await splitService.createNewPrivateSplit(
+                                  newSplit,
+                                  context,
+                                );
+
                         Navigator.pop(context); // Close the dialog
-                        showCustomSnackBar(
-                                context,
-                                "New private-split created successfully",
-                                backgroundColor: const Color.fromRGBO(15, 111, 179, 1)
-                              );
+                        // showCustomSnackBar(
+                        //         context,
+                        //         "New private-split created successfully",
+                        //         backgroundColor: const Color.fromRGBO(15, 111, 179, 1)
+                        //       );
                       },
                       onCancel: () {
                         Navigator.pop(context); // Just close the dialog

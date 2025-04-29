@@ -152,29 +152,12 @@ class Balance {
   }
 }
 
+class ExpenseTileModel {
+  final String name;
 
-// class GetGroups {
-//   final String groupID; 
-//   final String name;
-//   final int size;
+  ExpenseTileModel({required this.name});
 
-//   GetGroups({
-//     required this.groupID,
-//     required this.name,
-//     required this.size,
-//   });
-
-//   factory GetGroups.fromJson(Map<String, dynamic> json) {
-//     return GetGroups(
-//       groupID: json['groupID'] ?? '',
-//       name: json['name'] ?? '',
-//       size: json['size'] ?? 0,
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() => {
-//         'groupID': groupID, 
-//         'name': name,
-//         'size': size,
-//       };
-// }
+  factory ExpenseTileModel.fromJson(dynamic value) {
+    return ExpenseTileModel(name: value.toString());
+  }
+}

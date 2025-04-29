@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:my_new_app/locator.dart';
+import 'package:my_new_app/models/signup_response_model.dart';
+import 'package:my_new_app/services/service%20interfaces/login_section_service_interface.dart';
 import './login_page.dart';
 
 class SignupPage extends StatefulWidget {
@@ -11,6 +14,9 @@ class SignupPage extends StatefulWidget {
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -31,11 +37,11 @@ class _SignupPageState extends State<SignupPage> {
                     style: TextStyle(color: Colors.white, fontSize: 24),
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField("Name", false),
+                  _buildTextField("Name", false, _nameController),
                   const SizedBox(height: 10),
-                  _buildTextField("Username", false),
+                  _buildTextField("Username", false, _usernameController),
                   const SizedBox(height: 10),
-                  _buildTextField("Email", false, isEmail: true),
+                  _buildTextField("Email", false, _emailController, isEmail: true),
                   const SizedBox(height: 10),
                   _buildPasswordField(
                     "Password",
@@ -49,8 +55,46 @@ class _SignupPageState extends State<SignupPage> {
                     isConfirm: true,
                   ),
                   const SizedBox(height: 20),
-                  _buildGradientButton("Sign Up", () {
+                  _buildGradientButton("Sign Up", () async {
                     if (_formKey.currentState!.validate()) {
+
+                      try {
+                        final authService = locator<AuthService>();
+                        final signUpData = SignUpDataModel(
+                          name: _nameController.text,
+                          username: _usernameController.text,
+                          email: _emailController.text,
+                          password: _passwordController.text,
+                        );
+                        final loginResponse = await authService.signup(
+                          signUpData
+                        );
+
+                        print( loginResponse.message ); 
+
+                        if (loginResponse.success) {
+                          // Save the token is already done inside ApiAuthService.login()
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("User Account Created")),
+                          );
+                          // Navigate to Main Page
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => LoginPage()),
+                          );
+                        } else {
+                          // Show error if login failed
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(loginResponse.message ?? "Sign Up failed")),
+                          );
+                        }
+                      } catch (e) {
+                        // Handle unexpected errors (server down, network error etc.)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('An error occurred: $e')),
+                        );
+                      }
+
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -81,10 +125,14 @@ class _SignupPageState extends State<SignupPage> {
 
   Widget _buildTextField(
     String label,
-    bool obscureText, {
+    bool obscureText,
+    TextEditingController myController,
+    {
     bool isEmail = false,
-  }) {
+    }
+  ) {
     return TextFormField(
+      controller: myController,
       style: const TextStyle(color: Colors.white),
       obscureText: obscureText,
       keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,

@@ -56,7 +56,8 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	var groups []map[string]interface{}
 	for rows.Next() {
 		var (
-			groupName, groupID, description, inviteCode string
+			groupName, groupID, description  string
+			inviteCode                      sql.NullString
 			groupType                                   int
 			members                                     int
 		)
@@ -76,7 +77,7 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 			"size":        members,
 			"groupID":     groupID,
 			"description": description,
-			"inviteCode":  inviteCode,
+			"inviteCode":  inviteCode.String,
 			"groupType":   typeMap[groupType],
 		})
 	}

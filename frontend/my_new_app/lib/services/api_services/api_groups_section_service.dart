@@ -30,7 +30,7 @@ class ApiGroupService implements GroupService {
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    // print(response.statusCode); 
+    // print(response.statusCode);
     if (response.statusCode == 401) {
       redirectToLoginPage(context);
     }
@@ -38,9 +38,8 @@ class ApiGroupService implements GroupService {
     final data = jsonDecode(response.body);
     final List<dynamic> groupList = data['groups'];
 
-    List<GroupModel> groups = groupList
-        .map((groupJson) => GroupModel.fromJson(groupJson))
-        .toList();
+    List<GroupModel> groups =
+        groupList.map((groupJson) => GroupModel.fromJson(groupJson)).toList();
 
     return groups;
   }
@@ -53,13 +52,22 @@ class ApiGroupMemberService implements GroupMemberService {
 
   @override
   Future<List<GroupMemberModel>> fetchMembersForGroup(String groupId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
     final response = await http.get(
-      Uri.parse('$baseUrl/groups/$groupId/members'),
+      Uri.parse('$baseUrl/api/get_members?group_id=$groupId'),
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => GroupMemberModel.fromJson(e)).toList();
+      // final List<dynamic> data = jsonDecode(response.body);
+      // final List<dynamic> data = jsonDecode(response.body);
+      // return data.map((e) => GroupMemberModel.fromJson(e)).toList();
+
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      List<dynamic> members = json['members'];
+      return members.map((e) => GroupMemberModel.fromJson(e['username'])).toList() ; 
     } else {
       throw Exception("Failed to load group members");
     }
