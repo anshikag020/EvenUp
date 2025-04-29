@@ -50,7 +50,7 @@ CREATE TABLE expenses (
     description VARCHAR(255) NOT NULL,
     -- tag mapping: 0 = food, 1 = transport, 2 = entertainment, 3 = shopping, 4 = bills, 5 = other
     tag INT CHECK (tag IN (0, 1, 2, 3, 4, 5)) DEFAULT 5,
-    added_by VARCHAR(255) REFERENCES users(username),   -- TODO: should i change added by to last modified by?
+    added_by VARCHAR(255) REFERENCES users(username),   -- TODO: should i change added by to last modified by? yes
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     amount DECIMAL(10,2) NOT NULL
 );

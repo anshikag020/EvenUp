@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// TODO: size of group is not getting incremented properly
+// TODO: send name of the group also 
 func GetGroups(w http.ResponseWriter, r *http.Request) {
 	// authenticated user
 	username, ok := middleware.GetUsernameFromContext(r)

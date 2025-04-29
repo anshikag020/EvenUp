@@ -111,6 +111,7 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 
+// TODO: make sure email is verified
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	

@@ -675,6 +675,10 @@ type getExpenseDetailsResp struct {
 	Message      string             `json:"message,omitempty"` // only on failures
 }
 
+
+// TODO: change this a little....when we send the list of all expenses ...just send the details of them too
+// TODO: amount, description, paid by, contributed, last_updated_by, tag
+	
 func GetExpenseDetails(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

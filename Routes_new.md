@@ -81,25 +81,58 @@ We can use this to store the session values in the cookie (backend).
   "status": "bool",         // like: true: Success, false: Failure. status can only be true
 }
 ```
-
+*************** above is done  ***************
+Redis (or similar) if you need high throughput, simpler schema, and automatic TTL.
 ### 4. FORGOT PASSWORD
 **Route**: ```/api/forgot_password```\
-**METHOD**: ```POST```\
+**METHOD**: ```PUT```\
 **Description**: Used for forgot password. Basic format checking must be done on client side.\
 **Request body**:
 ```json
 {
-  "username": "string",
-  "email": "string"
+  "email": "string",
 }
 ```
 **Response**:
 ```json
 {  
   "status": "bool",         // like: true: Success, false: Failure
-  "message": "string"       // like: "Password reset link sent to email", "Invalid username or email"
+  "message": "string"       // like: "Password reset link sent to email", "Invalid email"
 }
 ```
+
+**Route**: ```/api/confirm_otp```\
+**METHOD**: ```PUT```\
+**Request body**:
+```json
+{
+  "otp": "string",
+}
+```
+**Response**:
+```json
+{  
+  "status": "bool",         // like: true: Success, false: Failure
+  "message": "string"       // like: "OTP verified successfully", "Invalid OTP"
+}
+```
+
+
+**Route**: ```/api/forgot_reset_password```\
+**METHOD**: ```PUT```\
+**Request body**:
+```json
+{
+  "new_password": "string",
+}
+```
+**Response**:
+```json
+{  
+  "status": "bool",         // like: true: Success, false: Failure
+  "message": "string"       // like: "Password reset successfully", "Invalid password"
+}
+``` 
 
 ## Home Page
 
@@ -124,7 +157,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 6. GET USER DETAILS   (done)
+### 6. GET USER DETAILS   (done) (redundant)
 **Route**: ```/api/get_user_details```\
 **METHOD**: ```GET```\
 **Description**: Used for getting user details.\
@@ -307,7 +340,7 @@ We can use this to store the session values in the cookie (backend).
 }
 ```
 
-### 14. EXIT GROUP      
+### 14. EXIT GROUP (done)     
 **Route**: ```/api/exit_group```\
 **METHOD**: ```DELETE```\
 **Description**: Used for exiting a group.\
@@ -419,7 +452,6 @@ We can use this to store the session values in the cookie (backend).
     "sender" : "string",
     "receiver" : "string",
     "amount" : "float",
-    "balanceAction": "int" // like: 0: remind, 1: settle, 2: Not involved
   ]
 }
 ```
@@ -484,7 +516,8 @@ We can use this to store the session values in the cookie (backend).
   "status": "bool",         // like: true: Success, false: Failure
   "transactions": [
     "transaction_id" : "string",
-    "sender" : "string",
+    "other_member" : "string",
+    "is_sender": "bool",    // true: if the other user is sender, false: if the other user is receiver
     "amount" : "float",
     "group_name" : "string"
   ]
@@ -611,6 +644,37 @@ We can use this to store the session values in the cookie (backend).
 ```
 
 
+
+### 23. EDIT EXPENSE     
+**Route**: ```/api/edit_expense```\
+**METHOD**: ```PUT```\
+**Description**: Used for adding an expense.\
+**Request body**:
+```json
+{  
+  "group_id": "string",
+  "username": "string",
+  "description": "string",
+  "amount": "float",
+  "tag": "string", // like: "Food", "Travel", "Entertainment", etc.
+  "split_between": [
+    "username_1" : "float",
+    "username_2" : "float"
+  ],
+  "paid_by": [
+    "username_1" : "float",
+    "username_2" : "float"
+  ],
+  "cookie"
+}
+```
+**Response**:
+```json
+{  
+  "status": "bool",         // like: true: Success, false: Failure
+  "message": "string"       // like: "Expense added successfully", "Group not found", "Some user has left the group"
+}
+```
 
 
 1. For sending emails, use ```SendGrid```.
