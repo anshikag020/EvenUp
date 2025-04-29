@@ -10,38 +10,94 @@ import (
 )
 
 func RegisterRoutes(router *mux.Router) {
-	// Authentication Routes
+	// Public (no auth)
 	router.HandleFunc("/api/signup", handlers.CreateUserAccount).Methods("POST")
-	router.HandleFunc("/api/login", handlers.LoginUser).Methods("POST")
-	router.HandleFunc("/api/logout", handlers.LogoutUser).Methods("POST")
-	router.HandleFunc("/api/reset_password", handlers.ResetPassword).Methods("POST")
-	router.Handle("/api/user/profile", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetUserProfile)))
+	router.HandleFunc("/api/login",  handlers.LoginUser).Methods("POST")
 
-	// Home action Routes
-	router.HandleFunc("/api/get_user_details", handlers.GetUserDetails).Methods("GET")
-	// router.HandleFunc("/api/create_group", handlers.CreateGroup).Methods("PUT")
-	router.Handle("/api/create_group", middleware.AuthMiddleware(http.HandlerFunc(handlers.CreateGroup)))
+	// Protected (requires JWT)
+	router.Handle("/api/logout",
+		middleware.AuthMiddleware(http.HandlerFunc(handlers.LogoutUser)),
+	).Methods("POST")
 
-	router.HandleFunc("/api/create_private_split", handlers.CreatePrivateSplit).Methods("PUT")
-	// router.HandleFunc("/api/join_group", handlers.JoinGroup).Methods("PUT")
-	router.Handle("/api/join_group", middleware.AuthMiddleware(http.HandlerFunc(handlers.JoinGroup)))
+	router.Handle("/api/reset_password",
+		middleware.AuthMiddleware(http.HandlerFunc(handlers.ResetPassword)),
+	).Methods("POST")
 
-	router.HandleFunc("/api/get_transaction_history", handlers.GetTransactionHistory).Methods("GET")
-	
-	// groups page actions
-	router.Handle("/api/get_groups", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetGroups)))
-	// router.HandleFunc("/api/get_groups", handlers.GetGroups).Methods("GET")
-	router.HandleFunc("/api/get_group_details", handlers.GetGroupDetails).Methods("GET")
-	router.HandleFunc("/api/get_members", handlers.GetMembers).Methods("GET")
-	router.HandleFunc("/api/exit_group", handlers.ExitGroup).Methods("DELETE")
-	router.HandleFunc("/api/select_another_admin", handlers.SelectAnotherAdmin).Methods("DELETE")
-	router.HandleFunc("/api/delete_group", handlers.DeleteGroup).Methods("DELETE")
+	router.Handle("/api/user/profile",
+		middleware.AuthMiddleware(http.HandlerFunc(handlers.GetUserProfile)),
+	).Methods("GET")
 
 
-	// Expenses routes
-	router.HandleFunc("/api/add_expense", handlers.AddExpenseHandler).Methods("PUT")
+	// Protected routes (require JWT auth)
+	router.Handle(
+		"/api/get_user_details",
+		middleware.AuthMiddleware(http.HandlerFunc(handlers.GetUserDetails)),
+	).Methods("GET")
+
+	router.Handle(
+		"/api/create_group",
+		middleware.AuthMiddleware(http.HandlerFunc(handlers.CreateGroup)),
+	).Methods("POST")
+
+	router.Handle(
+		"/api/create_private_split",
+		middleware.AuthMiddleware(http.HandlerFunc(handlers.CreatePrivateSplit)),
+	).Methods("POST")
+
+	router.Handle(
+		"/api/join_group",
+		middleware.AuthMiddleware(http.HandlerFunc(handlers.JoinGroup)),
+	).Methods("POST")
+
+	router.Handle(
+		"/api/get_transaction_history",
+		middleware.AuthMiddleware(http.HandlerFunc(handlers.GetTransactionHistory)),
+	).Methods("GET")
 
 
-	router.HandleFunc("/api/send_reminder", handlers.SendGroupReminder).Methods("POST")
+	// Groups page actions (all require a valid JWT)
+router.Handle(
+    "/api/get_groups",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.GetGroups)),
+).Methods("GET")
+
+router.Handle(
+    "/api/get_group_details",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.GetGroupDetails)),
+).Methods("GET")
+
+router.Handle(
+    "/api/get_members",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.GetMembers)),
+).Methods("GET")
+
+router.Handle(
+    "/api/exit_group",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.ExitGroup)),
+).Methods("DELETE")
+
+router.Handle(
+    "/api/select_another_admin",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.SelectAnotherAdmin)),
+).Methods("PUT")
+
+router.Handle(
+    "/api/delete_group",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.DeleteGroup)),
+).Methods("DELETE")
+
+
+
+// Expenses routes (all protected; use POST to create)
+router.Handle(
+    "/api/add_expense",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.AddExpenseHandler)),
+).Methods("POST")
+
+router.Handle(
+    "/api/send_reminder",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.SendGroupReminder)),
+).Methods("POST")
+
 
 }
