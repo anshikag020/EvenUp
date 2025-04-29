@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"log"
 	"time"
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"

@@ -49,11 +49,6 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	type_map := map[int]string{
-		0: "OTS",
-		1: "Private-Split",
-		2: "Normal",
-	}
 
 	// Prepare the response
 	var groups []map[string]interface{}
