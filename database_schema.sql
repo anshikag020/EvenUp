@@ -1,5 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- TODO: for all the amount values (NUMERIC) increase the number of decimal places from 2 in the end
 CREATE TABLE users (
     username VARCHAR(255) UNIQUE PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

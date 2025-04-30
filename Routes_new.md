@@ -387,7 +387,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 }
 ```
 
-### 16. DELETE GROUP
+### 16. DELETE GROUP   
 **Route**: ```/api/delete_group```\
 **METHOD**: ```DELETE```\
 **Description**: Used for deleting a group.\
@@ -407,7 +407,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 }
 ```
 
-### 17. GET EXPENSES OF A GROUP
+### 17. GET EXPENSES OF A GROUP    (done)
 **Route**: ```/api/get_expenses```\
 **METHOD**: ```GET```\
 **Description**: Used for getting expenses of a group.\
@@ -432,7 +432,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 ```
 ## Balances Page
 
-### 18. SHOW BALANCES OF A GROUP
+### 18. SHOW BALANCES OF A GROUP  (done)
 **Route**: ```/api/show_balances```\
 **METHOD**: ```GET```\
 **Description**: Used for showing balances.\
@@ -465,7 +465,6 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 {  
   "receiver": "string",
   "group_id": "string",
-  "cookie"
 }
 ```
 **Response**:
@@ -575,7 +574,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
   "owed_by" : ["string" : "float"],
   "amount" : "float"
 
-  
+
 ### 22. GET EXPENSE DETAILS   (done)
 **Route**: ```/api/get_expense_details```\
 **METHOD**: ```GET```\
@@ -655,15 +654,14 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 
 
 
-### 23. EDIT EXPENSE     
+### 23. EDIT EXPENSE     (done)
 **Route**: ```/api/edit_expense```\
 **METHOD**: ```PUT```\
 **Description**: Used for adding an expense.\
 **Request body**:
 ```json
 {  
-  "group_id": "string",
-  "username": "string",
+  "expense_id": "string",
   "description": "string",
   "amount": "float",
   "tag": "string", // like: "Food", "Travel", "Entertainment", etc.
@@ -674,8 +672,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
   "paid_by": [
     "username_1" : "float",
     "username_2" : "float"
-  ],
-  "cookie"
+  ]
 }
 ```
 **Response**:

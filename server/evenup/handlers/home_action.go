@@ -150,8 +150,6 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// TODO: if a private split already exists, return an error
-// TODO: remove description from the request
 func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var req struct {

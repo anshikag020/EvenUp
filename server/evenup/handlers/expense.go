@@ -1019,3 +1019,181 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
         Expenses: prelim,
     })
 }
+
+
+func EditExpenseHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		ExpenseID     string             `json:"expense_id"`
+		Description   string             `json:"description"`
+		Amount        float64            `json:"amount"`
+		Tag           string             `json:"tag"`
+		SplitBetween  map[string]float64 `json:"split_between"`
+		PaidBy        map[string]float64 `json:"paid_by"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "Malformed request body",
+		})
+		return
+	}
+
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	// 1. Get group_id from expense
+	var groupID string
+	err = tx.QueryRow(`SELECT group_id FROM expenses WHERE expense_id = $1`, req.ExpenseID).Scan(&groupID)
+	if err == sql.ErrNoRows {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  false,
+			"message": "Expense not found",
+		})
+		return
+	} else if err != nil {
+		log.Println("query group_id:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Get all members currently in the group
+	groupMembers := map[string]bool{}
+	rows, err := tx.Query(`SELECT participant FROM group_participants WHERE group_id = $1`, groupID)
+	if err != nil {
+		log.Println("fetch group participants:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var user string
+		_ = rows.Scan(&user)
+		groupMembers[user] = true
+	}
+
+	// 3. Check all users in bill split are still in group
+	involved := make(map[string]bool)
+	for u := range req.SplitBetween {
+		involved[u] = true
+	}
+	for u := range req.PaidBy {
+		involved[u] = true
+	}
+	for u := range involved {
+		if !groupMembers[u] {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"status":  false,
+				"message": "User '" + u + "' is not part of the group anymore",
+			})
+			return
+		}
+	}
+
+	// 4. Fetch old bill_split and calculate netChanges
+	oldSplits := make(map[string]float64)
+	rows, err = tx.Query(`
+		SELECT username, amount_contributed, amount_owed
+		FROM bill_split
+		WHERE expense_id = $1
+	`, req.ExpenseID)
+	if err != nil {
+		log.Println("fetch old bill_split:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user string
+		var contrib, owed float64
+		if err := rows.Scan(&user, &contrib, &owed); err != nil {
+			log.Println("scan old bill_split:", err)
+			http.Error(w, "Server error", http.StatusInternalServerError)
+			return
+		}
+		oldSplits[user] = contrib - owed
+	}
+
+	// 5. Delete old bill_split
+	_, err = tx.Exec(`DELETE FROM bill_split WHERE expense_id = $1`, req.ExpenseID)
+	if err != nil {
+		log.Println("delete old bill_split:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	// 6. Insert new bill_split
+	stmt, err := tx.Prepare(`
+		INSERT INTO bill_split (expense_id, username, amount_contributed, amount_owed)
+		VALUES ($1, $2, $3, $4)
+	`)
+	if err != nil {
+		log.Println("prepare insert bill_split:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	newSplits := make(map[string]float64)
+	for user := range involved {
+		contrib := req.PaidBy[user]
+		owed := req.SplitBetween[user]
+		_, err := stmt.Exec(req.ExpenseID, user, contrib, owed)
+		if err != nil {
+			log.Println("insert bill_split:", err)
+			http.Error(w, "Server error", http.StatusInternalServerError)
+			return
+		}
+		newSplits[user] = contrib - owed
+	}
+
+	// 7. Calculate net changes
+	netChanges := make(map[string]float64)
+	for user := range involved {
+		netChanges[user] = newSplits[user] - oldSplits[user]
+	}
+
+	// 8. Update expense metadata
+	tagInt := mapTagToInt(req.Tag)
+	_, err = tx.Exec(`
+		UPDATE expenses
+		SET description = $1, tag = $2, amount = $3, added_by = $4, timestamp = CURRENT_TIMESTAMP
+		WHERE expense_id = $5
+	`, req.Description, tagInt, req.Amount, username, req.ExpenseID)
+	if err != nil {
+		log.Println("update expenses table:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	// 9. Optimise balances
+	if err := OptimiseBalances(tx, groupID, netChanges); err != nil {
+		log.Println("optimise balances:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	// 10. Commit
+	if err := tx.Commit(); err != nil {
+		log.Println("tx commit:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "Expense updated successfully",
+	})
+}

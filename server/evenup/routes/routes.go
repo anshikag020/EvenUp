@@ -104,6 +104,11 @@ router.Handle(
     middleware.AuthMiddleware(http.HandlerFunc(handlers.GetExpenses)),
 ).Methods("POST")
 
+router.Handle(
+	"/api/edit_expense",
+	middleware.AuthMiddleware(http.HandlerFunc(handlers.EditExpenseHandler)),
+).Methods("PUT")
+
 
 
 
@@ -114,4 +119,10 @@ router.Handle(
     middleware.AuthMiddleware(http.HandlerFunc(handlers.GetBalances)),
 ).Methods("POST")
 
+router.Handle(
+	"/api/settle_balance",
+	middleware.AuthMiddleware(http.HandlerFunc(handlers.SettleBalanceHandler)),
+).Methods("PUT")
+
 }
+

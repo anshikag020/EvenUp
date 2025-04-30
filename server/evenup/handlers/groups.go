@@ -12,8 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: size of group is not getting incremented properly
-// TODO: send name of the group also 
 func GetGroups(w http.ResponseWriter, r *http.Request) {
 	// authenticated user
 	username, ok := middleware.GetUsernameFromContext(r)
@@ -34,15 +32,15 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	// Query to get all groups the user is a part of
 	rows, err := config.DB.Query(`
 		SELECT g.group_name,
-			COUNT(gp.participant)            AS members,
-			g.group_id,
-			g.group_description,
-			g.invite_code,
-			g.group_type
-		FROM groups g
-		JOIN group_participants gp ON g.group_id = gp.group_id
-		WHERE gp.participant = $1
-		GROUP BY g.group_name, g.group_id, g.group_description, g.invite_code, g.group_type
+       g.group_id,
+       g.group_description,
+       g.invite_code,
+       g.group_type,
+       (SELECT COUNT(*) FROM group_participants WHERE group_id = g.group_id) AS members
+FROM groups g
+WHERE g.group_id IN (
+    SELECT group_id FROM group_participants WHERE participant = $1
+)
 	`, username)
 
 	if err != nil {
@@ -56,16 +54,17 @@ func GetGroups(w http.ResponseWriter, r *http.Request) {
 	var groups []map[string]interface{}
 	for rows.Next() {
 		var (
-			groupName, groupID, description  string
+			groupName,  description  		string
+			groupID					       string
 			inviteCode                      sql.NullString
-			groupType                                   int
-			members                                     int
+			groupType,members                                  int
 		)
-		if err := rows.Scan(&groupName, &members, &groupID, &description, &inviteCode, &groupType); err != nil {
+		if err := rows.Scan(&groupName, &groupID, &description, &inviteCode, &groupType, &members); err != nil {
+			// Log the error for debugging purposes
+			log.Println("Error scanning group data:", err)
 			http.Error(w, "Failed to scan group data", http.StatusInternalServerError)
 			return
 		}
-		// TODO: look into this
 		typeMap := map[int]string{
 			0: "OTS",
 			1: "Grey Group",

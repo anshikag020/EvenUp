@@ -111,7 +111,7 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// TODO: make sure email is verified
+// TODO: make sure email is verified, will do it later
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	
@@ -193,7 +193,6 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		"status":  true,
 		"token":  tokenString,
 		"message": "User logged in successfully",
-		//TODO: "token":   token, // Optionally include the token in the response
 	})
 }
 

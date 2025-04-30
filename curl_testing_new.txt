@@ -78,3 +78,44 @@ curl -X POST http://localhost:8080/api/get_balances \
         "group_id": "'"$GROUP_ID"'"
       }'
 
+7. Get groups
+
+TOKEN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NzMxMTUsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.E9_3oDtmIpNY9fCUEGimne8ws-aGKvX8IcMhCC1QUjg'
+
+curl -X GET http://localhost:8080/api/get_groups \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json"
+
+
+8. Edit expense
+export EXPENSE_ID="f12224ca-3198-4da3-98ae-4c9b0f834b53"
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NzMxMTUsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.E9_3oDtmIpNY9fCUEGimne8ws-aGKvX8IcMhCC1QUjg"
+curl -X PUT http://localhost:8080/api/edit_expense \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer $TOKEN" \
+     -d '{
+           "expense_id": "'"${EXPENSE_ID}"'",
+           "description": "Updated: Dinner at Luigi’s (with dessert)",
+           "amount": 150.75,
+           "tag": "food",
+           "split_between": {
+             "alice123": 75.375,
+             "bob02":    75.375
+           },
+           "paid_by": {
+             "alice123": 150.75
+           }
+         }'
+
+9. Settle Balance
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NzMxMTUsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.E9_3oDtmIpNY9fCUEGimne8ws-aGKvX8IcMhCC1QUjg"
+export GROUP_ID="9d25979b-42c5-4cbb-8bd5-897c4cb2076a"
+
+curl -X PUT http://localhost:8080/api/settle_balance \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "receiver": "bob02",
+        "group_id": "'"$GROUP_ID"'"
+      }'
+
