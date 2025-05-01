@@ -17,6 +17,7 @@ import(
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"time"
 	"github.com/google/uuid"
+	"github.com/anshikag020/EvenUp/server/evenup/services"
 )
 
 type AddExpenseRequest struct {
@@ -363,6 +364,72 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		Message: "Expense added successfully",
 	})
 	responded = true
+	go func() {
+		involved := map[string]bool{}
+		for u := range req.PaidBy {
+			if u != username {
+				involved[u] = true
+			}
+		}
+		for u := range req.SplitBetween {
+			if u != username {
+				involved[u] = true
+			}
+		}
+	
+		if len(involved) == 0 {
+			return
+		}
+	
+		// Fetch emails of involved users
+		usernames := make([]string, 0, len(involved))
+		for u := range involved {
+			usernames = append(usernames, u)
+		}
+	
+		query := `
+			SELECT username, email FROM users
+			WHERE username = ANY($1)
+		`
+		rows, err := config.DB.Query(query, pq.Array(usernames))
+		if err != nil {
+			log.Println("fetch user emails for expense notification:", err)
+			return
+		}
+		defer rows.Close()
+	
+		subject := fmt.Sprintf("New Expense in Group %s", req.GroupID)
+	
+		for rows.Next() {
+			var uname, email string
+			if err := rows.Scan(&uname, &email); err != nil {
+				log.Println("scan email row:", err)
+				continue
+			}
+	
+			contributed := req.PaidBy[uname]
+			owed := req.SplitBetween[uname]
+	
+			// Build personalized body
+			body := fmt.Sprintf("Hi %s,\n\n%s added a new expense: \"%s\" of ₹%.2f in group %s.\n",
+				uname, username, req.Description, req.Amount, req.GroupID)
+	
+			if contributed > 0 {
+				body += fmt.Sprintf("You contributed: ₹%.2f\n", contributed)
+			}
+			if owed > 0 {
+				body += fmt.Sprintf("You owe: ₹%.2f\n", owed)
+			}
+	
+			body += "\nCheck the app for full details.\n\nThanks,\nEvenup"
+	
+			// Send the email
+			if mailErr := services.SendMail([]string{email}, subject, body); mailErr != nil {
+				log.Printf("Email to %s failed: %v\n", uname, mailErr)
+			}
+		}
+	}()
+	
 
 	// Send WebSocket Notification
 	if WS != nil {
@@ -634,7 +701,13 @@ func DeleteExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows.Close()
-
+	type userSplit struct {
+		Owed        float64
+		Contributed float64
+	}
+	
+	userSplits := make(map[string]userSplit)
+	
 	netChanges := make(map[string]float64) // username -> delta
 	involved   := make([]string, 0, 8)     // to test membership later
 
@@ -710,7 +783,56 @@ func DeleteExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		respond(w, false, "Internal server error")
 		return
 	}
-
+	go func() {
+		involvedMap := make(map[string]bool)
+		for _, user := range involved {
+			if user != username {
+				involvedMap[user] = true
+			}
+		}
+	
+		if len(involvedMap) == 0 {
+			return
+		}
+	
+		usernames := make([]string, 0, len(involvedMap))
+		for u := range involvedMap {
+			usernames = append(usernames, u)
+		}
+	
+		// Fetch emails
+		rows, err := config.DB.Query(`
+			SELECT username, email FROM users
+			WHERE username = ANY($1)
+		`, pq.Array(usernames))
+		if err != nil {
+			log.Println("fetch user emails for deletion notification:", err)
+			return
+		}
+		defer rows.Close()
+	
+		subject := "Expense Deleted"
+	
+		for rows.Next() {
+			var uname, email string
+			if err := rows.Scan(&uname, &email); err != nil {
+				log.Println("scan user email:", err)
+				continue
+			}
+	
+			split := userSplits[uname]
+	
+			body := fmt.Sprintf(
+				"Hi %s,\n\n%s has deleted an expense (ID: %s) in one of your groups.\nYou had contributed: ₹%.2f\nYou had owed: ₹%.2f\n\nPlease check the app for updated balances.\n\nThanks,\nEvenup",
+				uname, username, req.ExpenseID, split.Contributed, split.Owed,
+			)
+	
+			if mailErr := services.SendMail([]string{email}, subject, body); mailErr != nil {
+				log.Printf("Email to %s failed: %v\n", uname, mailErr)
+			}
+		}
+	}()
+	
 	respond(w, true, "Expense deleted successfully")
 }
 
@@ -1307,6 +1429,71 @@ func EditExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
+	go func() {
+		type userSplit struct {
+			Owed        float64
+			Contributed float64
+		}
+	
+		// Build involved map excluding editor
+		involvedMap := make(map[string]userSplit)
+		for user, contrib := range req.PaidBy {
+			if user == username {
+				continue
+			}
+			owed := req.SplitBetween[user]
+			involvedMap[user] = userSplit{Contributed: contrib, Owed: owed}
+		}
+		for user, owed := range req.SplitBetween {
+			if user == username {
+				continue
+			}
+			if _, exists := involvedMap[user]; !exists {
+				contrib := req.PaidBy[user]
+				involvedMap[user] = userSplit{Contributed: contrib, Owed: owed}
+			}
+		}
+	
+		if len(involvedMap) == 0 {
+			return
+		}
+	
+		usernames := make([]string, 0, len(involvedMap))
+		for u := range involvedMap {
+			usernames = append(usernames, u)
+		}
+	
+		rows, err := config.DB.Query(`
+			SELECT username, email FROM users
+			WHERE username = ANY($1)
+		`, pq.Array(usernames))
+		if err != nil {
+			log.Println("fetch emails after edit:", err)
+			return
+		}
+		defer rows.Close()
+	
+		subject := "Expense Updated"
+	
+		for rows.Next() {
+			var uname, email string
+			if err := rows.Scan(&uname, &email); err != nil {
+				log.Println("scan email:", err)
+				continue
+			}
+	
+			split := involvedMap[uname]
+			body := fmt.Sprintf(
+				"Hi %s,\n\n%s has updated an expense: \"%s\" of ₹%.2f in your group.\nYou now owe: ₹%.2f\nYou contributed: ₹%.2f\n\nCheck the app for details.\n\nThanks,\nSplitwise Clone",
+				uname, username, req.Description, req.Amount, split.Owed, split.Contributed,
+			)
+	
+			if err := services.SendMail([]string{email}, subject, body); err != nil {
+				log.Printf("Failed to send email to %s: %v\n", uname, err)
+			}
+		}
+	}()
+	
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
