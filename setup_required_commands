@@ -20,3 +20,19 @@
 
 ```go get github.com/emirpasic/gods```   for using TreeMap
 
+# Required for loading .env file 
+```go get github.com/joho/godotenv```
+
+# ngrok
+Download the latest Linux amd64 ZIP
+
+wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip
+Unzip and install
+
+unzip ngrok-stable-linux-amd64.zip
+chmod +x ngrok
+sudo mv ngrok /usr/local/bin/
+
+Verify it’s on your PATH
+which ngrok    # should print /usr/local/bin/ngrok
+ngrok version  # confirms install

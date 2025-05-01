@@ -49,6 +49,7 @@ curl -X POST http://localhost:8080/api/signup \
 2. login
 curl -X POST http://localhost:8080/api/login \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your_auth_token>" \
   -d '{
     "username": "john_doe",
     "password": "securePassword123"
@@ -57,6 +58,7 @@ curl -X POST http://localhost:8080/api/login \
 
 curl -X POST http://localhost:8080/api/login \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your_auth_token>" \
   -d '{
     "username": "john_doe",
     "password": "123"
@@ -199,3 +201,9 @@ curl -X PUT http://localhost:8080/api/add_expense \
       "alice01": 10
     }
   }'
+
+15. Send Reminder (in group)
+curl -X POST http://localhost:8080/api/send_reminder   -H "Content-Type: application/json"   -d '{
+    "username": "y1",
+    "group_id": "6581f6a4-b655-4733-ba9c-d895ed48bc36"
+}'
