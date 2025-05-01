@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
+import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
@@ -20,7 +20,7 @@ class ExpenseDetailDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     const double maxListHeight = 100.0;
-    final service = GetIt.instance<DetailedExpenseService>();
+    final service = locator<DetailedExpenseService>();
 
     Color textDarkColor =   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight; 
 
@@ -73,6 +73,10 @@ class ExpenseDetailDialog extends StatelessWidget {
                         children: [
                           buildLabel('Description:', textDarkColor),
                           buildText(expense.description, textLightColor),
+                          const SizedBox(height: 16),
+                          buildLabel('Expense Tag', textDarkColor),
+                          const SizedBox(height: 3),
+                          buildText(expense.tag, textLightColor),
                           const SizedBox(height: 16),
                           buildLabel('Paid by:', textDarkColor),
                           buildList(expense.paidBy, maxListHeight, textLightColor),

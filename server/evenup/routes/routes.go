@@ -105,6 +105,11 @@ router.Handle(
 ).Methods("POST")
 
 router.Handle(
+    "/api/get_expense_details",
+    middleware.AuthMiddleware(http.HandlerFunc(handlers.GetExpenseDetails)),
+).Methods("POST")
+
+router.Handle(
 	"/api/edit_expense",
 	middleware.AuthMiddleware(http.HandlerFunc(handlers.EditExpenseHandler)),
 ).Methods("PUT")

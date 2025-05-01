@@ -105,7 +105,7 @@ class GroupDetailScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => AllExpensesScreen()),
+                        MaterialPageRoute(builder: (_) => AllExpensesScreen(groupID: groupID,)),
                       );
                     },
                   ),
@@ -118,7 +118,7 @@ class GroupDetailScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => AllBalancesScreen(username: "Monish"),
+                          builder: (_) => AllBalancesScreen(groupID: groupID,),
                         ),
                       );
                     },

@@ -5,38 +5,65 @@ import 'package:my_new_app/services/service%20interfaces/groups_section_service_
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/general_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../locator.dart';
 
 class AllBalancesScreen extends StatefulWidget {
-  final String username;
+  final String groupID;
 
-  const AllBalancesScreen({super.key, required this.username});
+  const AllBalancesScreen({super.key, required this.groupID});
 
   @override
   State<AllBalancesScreen> createState() => _AllBalancesScreenState();
 }
 
 class _AllBalancesScreenState extends State<AllBalancesScreen> {
-  late Future<List<Balance>> _balancesFuture;
-
+  Future<List<Balance>>? _balancesFuture;
+  late String? username;
   @override
   void initState() {
     super.initState();
-    _balancesFuture = locator<BalanceService>().fetchBalances();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUsername = prefs.getString('username');
+    setState(() {
+      username = savedUsername;
+      _balancesFuture = locator<BalanceService>().fetchBalances(widget.groupID);
+    });
   }
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.dark
+              ? AppColors.backgroundDark
+              : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.dark
+                ? AppColors.appBarColorDark
+                : AppColors.appBarColorLight,
         title: Text(
           "Balances",
-          style: GoogleFonts.poppins(fontSize: 22, color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            color:
+                Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textDark
+                    : AppColors.textLight,
+          ),
         ),
-        iconTheme: IconThemeData(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+        iconTheme: IconThemeData(
+          color:
+              Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textDark
+                  : AppColors.textLight,
+        ),
       ),
       body: FutureBuilder<List<Balance>>(
         future: _balancesFuture,
@@ -54,7 +81,12 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
             return Center(
               child: Text(
                 'No balances found.',
-                style: TextStyle(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                style: TextStyle(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textDark
+                          : AppColors.textLight,
+                ),
               ),
             );
           } else {
@@ -65,8 +97,8 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                 itemCount: balances.length,
                 itemBuilder: (context, index) {
                   final balance = balances[index];
-                  final isUser1 = balance.user1 == widget.username;
-                  final isUser2 = balance.user2 == widget.username;
+                  final isUser1 = balance.user1 == username;
+                  final isUser2 = balance.user2 == username;
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 15),
@@ -75,14 +107,23 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         // color: const Color(0xFF2C2C2C),
-                        color:   Theme.of(context).brightness ==  Brightness.dark ?  AppColors.box2Dark: AppColors.box2Light,
+                        color:
+                            Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.box2Dark
+                                : AppColors.box2Light,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
                         children: [
                           Text(
                             "${balance.user1} owes ${balance.user2} ₹${balance.amount}",
-                            style: GoogleFonts.poppins(color:   Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                            style: GoogleFonts.poppins(
+                              color:
+                                  Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textDark
+                                      : AppColors.textLight,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           if (isUser1)
@@ -100,7 +141,12 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                                             context,
                                             "Balance settled up from your side",
                                             backgroundColor:
-                                                const Color.fromARGB(255, 58, 133, 61),
+                                                const Color.fromARGB(
+                                                  255,
+                                                  58,
+                                                  133,
+                                                  61,
+                                                ),
                                           );
                                         },
                                         onCancel: () {
@@ -144,13 +190,16 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                                             'Do you wish to send a reminder?',
                                         onConfirm: () {
                                           // handle here
-                                          
+
                                           showCustomSnackBar(
                                             context,
                                             "Reminder sent to ${balance.user1} to pay ${balance.user2}",
                                             backgroundColor:
                                                 const Color.fromARGB(
-                                                  255, 233, 30, 99
+                                                  255,
+                                                  233,
+                                                  30,
+                                                  99,
                                                 ),
                                           );
                                         },

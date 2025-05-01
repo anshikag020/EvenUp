@@ -67,7 +67,33 @@ class ApiGroupMemberService implements GroupMemberService {
 
       final Map<String, dynamic> json = jsonDecode(response.body);
       List<dynamic> members = json['members'];
-      return members.map((e) => GroupMemberModel.fromJson(e['username'])).toList() ; 
+      return members
+          .map((e) => GroupMemberModel.fromJson(e['username']))
+          .toList();
+    } else {
+      throw Exception("Failed to load group members");
+    }
+  }
+}
+
+class GroupUserPanelImpl implements GroupUserPanelService {
+  final String baseUrl;
+
+  GroupUserPanelImpl({required this.baseUrl});
+
+  @override
+  Future<void> exitGroup(String groupId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/get_members?group_id=$groupId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      // final Map<String, dynamic> json = jsonDecode(response.body);
+      // handling required here
     } else {
       throw Exception("Failed to load group members");
     }
@@ -80,14 +106,57 @@ class ApiExpenseService implements ExpenseService {
   ApiExpenseService({required this.baseUrl});
 
   @override
-  Future<List<ExpenseModel>> fetchAllExpenses() async {
-    final response = await http.get(Uri.parse('$baseUrl/expenses'));
+  Future<List<ExpenseModel>> fetchAllExpenses(String groupID) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/get_expenses'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'group_id': groupID}),
+    );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => ExpenseModel.fromJson(e)).toList();
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      final List<dynamic> expenses = json['expenses'];
+      return expenses.map((e) => ExpenseModel.fromJson(e)).toList();
     } else {
-      throw Exception('Failed to load expenses');
+      throw Exception('Failed to load expenses: ${response.statusCode}');
+    }
+  }
+}
+
+class ApiBalanceService implements BalanceService {
+  final String baseUrl;
+
+  ApiBalanceService({required this.baseUrl});
+
+  @override
+  Future<List<Balance>> fetchBalances(String groupID) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/get_balances'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'group_id': groupID}),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> json = jsonDecode(response.body);
+      final List<dynamic> balances = json['balances'];
+      return balances.map((e) => Balance.fromJson(e)).toList();
+
+      // final List<dynamic> data = json.decode(response.body);
+      // return data.map((json) => Balance.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load balances');
     }
   }
 }
@@ -99,31 +168,26 @@ class ApiDetailedExpenseService implements DetailedExpenseService {
 
   @override
   Future<DetailedExpenseModel> fetchExpenseById(String expenseID) async {
-    final response = await http.get(Uri.parse('$baseUrl/$expenseID'));
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/get_expense_details'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'expense_id': expenseID}),
+    );
 
     if (response.statusCode == 200) {
       final dynamic data = jsonDecode(response.body);
+      if (data['status'] != true) {
+        throw Exception('Failed to fetch expense');
+      }
       return DetailedExpenseModel.fromJson(data);
     } else {
       throw Exception("Failed to load group members");
-    }
-  }
-}
-
-class ApiBalanceService implements BalanceService {
-  final String baseUrl;
-
-  ApiBalanceService({required this.baseUrl});
-
-  @override
-  Future<List<Balance>> fetchBalances() async {
-    final response = await http.get(Uri.parse('$baseUrl/balances'));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Balance.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load balances');
     }
   }
 }

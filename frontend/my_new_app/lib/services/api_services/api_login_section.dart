@@ -8,12 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-
 class ApiAuthService implements AuthService {
   final String baseUrl;
 
   ApiAuthService({required this.baseUrl});
- 
+
   @override
   Future<SignUpResponse> signup(SignUpDataModel signUpData) async {
     final response = await http.post(
@@ -30,7 +29,6 @@ class ApiAuthService implements AuthService {
     }
   }
 
-
   @override
   Future<LoginResponse> login(String username, String password) async {
     final response = await http.post(
@@ -44,6 +42,8 @@ class ApiAuthService implements AuthService {
     if (data['status']) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwtToken', data['token']);
+      await prefs.setString('username', username.trim());
+
       return LoginResponse.fromJson(data);
     } else {
       return LoginResponse(success: false, message: data['message']);
@@ -63,8 +63,8 @@ class ApiAuthService implements AuthService {
     if (response.statusCode == 401) {
       redirectToLoginPage(context);
     }
-
     final data = jsonDecode(response.body);
+    // await prefs.setString('jwtToken', data['username']);
     return User.fromJson(data);
   }
 

@@ -34,7 +34,7 @@ class MockGroupMemberService implements GroupMemberService {
 
 class MockExpenseService implements ExpenseService {
   @override
-  Future<List<ExpenseModel>> fetchAllExpenses() async {
+  Future<List<ExpenseModel>> fetchAllExpenses(String groupID) async {
     final String response = await rootBundle.loadString('lib/data/expenses_data.json');
     final List<dynamic> data = jsonDecode(response);
     return data.map((e) => ExpenseModel.fromJson(e)).toList();
@@ -56,7 +56,7 @@ class MockDetailedExpenseService implements DetailedExpenseService {
 
 class MockBalanceService implements BalanceService {
   @override
-  Future<List<Balance>> fetchBalances() async {
+  Future<List<Balance>> fetchBalances(String groupID) async {
     final String response = await rootBundle.loadString('lib/data/all_balances_data.json');
     final List<dynamic> data = json.decode(response);
     return data.map((json) => Balance.fromJson(json)).toList();

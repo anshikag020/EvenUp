@@ -2,6 +2,7 @@
     "id": "exp1",
     "description": "This is just a demo description that I am writing here just to test whether this is properly showed on the screen or not.",
     "amount": "500",
+    "tag": "Entertainment" ,
     "paidBy": ["Monish"],
     "owedBy": ["Yash", "Anirudh","Anshika", "Samyak","Hardik", "Dhawal"],
     "lastUpdatedBy": "Yash"

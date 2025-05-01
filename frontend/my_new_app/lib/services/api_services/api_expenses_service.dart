@@ -57,34 +57,34 @@ class AddExpenseServiceImpl extends AddExpenseService{
 
 
 
-class ApiGroupService implements GroupService {
-  final String baseUrl;
+// class ApiGroupService implements GroupService {
+//   final String baseUrl;
 
-  ApiGroupService({required this.baseUrl});
+//   ApiGroupService({required this.baseUrl});
 
-  @override
-  Future<List<GroupModel>> fetchGroups(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwtToken');
+//   @override
+//   Future<List<GroupModel>> fetchGroups(BuildContext context) async {
+//     final prefs = await SharedPreferences.getInstance();
+//     final token = prefs.getString('jwtToken');
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/get_groups'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+//     final response = await http.get(
+//       Uri.parse('$baseUrl/api/get_groups'),
+//       headers: {'Authorization': 'Bearer $token'},
+//     );
 
-    // print(response.statusCode);
-    if (response.statusCode == 401) {
-      redirectToLoginPage(context);
-    }
+//     // print(response.statusCode);
+//     if (response.statusCode == 401) {
+//       redirectToLoginPage(context);
+//     }
 
-    final data = jsonDecode(response.body);
-    final List<dynamic> groupList = data['groups'];
+//     final data = jsonDecode(response.body);
+//     final List<dynamic> groupList = data['groups'];
 
-    List<GroupModel> groups =
-        groupList.map((groupJson) => GroupModel.fromJson(groupJson)).toList();
+//     List<GroupModel> groups =
+//         groupList.map((groupJson) => GroupModel.fromJson(groupJson)).toList();
 
-    return groups;
-  }
-}
+//     return groups;
+//   }
+// }
 
 

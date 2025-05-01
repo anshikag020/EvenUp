@@ -428,8 +428,8 @@ void initState() {
       ? widget.initialSplitType!
       : 'Evenly';
 
-  for (var member in widget.members) {
-    final name = member.name;
+  for (var member in widget.selectedMembers) {
+    final name = member;
     double initialValue = widget.initialSplitDetails?[name] ?? 0.0;
 
     controllers[name] = TextEditingController(
@@ -477,47 +477,47 @@ void initState() {
   }
 
   void _confirmSplit() {
-    Map<String, double> result = {};
-    double total = 0.0;
+  Map<String, double> result = {};
+  double total = 0.0;
 
-    for (var entry in controllers.entries) {
-      String text = entry.value.text.trim();
-      if (text.isEmpty) {
-        _showError('Please enter value for ${entry.key}');
-        return;
-      }
+  for (var name in widget.selectedMembers) {
+    final controller = controllers[name];
+    if (controller == null) continue;
 
-      double? value = double.tryParse(text);
-      if (value == null || value < 0) {
-        _showError('Invalid value for ${entry.key}');
-        return;
-      }
-
-      result[entry.key] = value;
-      total += value;
+    String text = controller.text.trim();
+    if (text.isEmpty) {
+      _showError('Please enter value for $name');
+      return;
     }
 
-    if (splitType == 'Evenly' || splitType == 'Unevenly') {
-      if ((total - widget.totalAmount).abs() >= 1) {
-        _showError('The split total does not match the expense amount.');
-        return;
-      }
-    } else if (splitType == 'By Percentage') {
-      if ((total - 100).abs() >= 1) {
-        _showError('Total percentage must equal 100%.');
-        return;
-      }
-      // Convert percentage to amounts
-      result = result.map(
-        (k, v) => MapEntry(
-          k,
-          double.parse(((v / 100) * widget.totalAmount).toStringAsFixed(2)),
-        ),
-      );
+    double? value = double.tryParse(text);
+    if (value == null || value < 0) {
+      _showError('Invalid value for $name');
+      return;
     }
 
-    Navigator.of(context).pop({'type': splitType, 'details': result});
+    result[name] = value;
+    total += value;
   }
+
+  if (splitType == 'Evenly' || splitType == 'Unevenly') {
+    if ((total - widget.totalAmount).abs() >= 0.01) {
+      _showError('The split total does not match the expense amount.');
+      return;
+    }
+  } else if (splitType == 'By Percentage') {
+    if ((total - 100).abs() >= 0.01) {
+      _showError('Total percentage must equal 100%.');
+      return;
+    }
+    // Convert percentages to amounts
+    result = result.map((k, v) =>
+        MapEntry(k, double.parse(((v / 100) * widget.totalAmount).toStringAsFixed(2))));
+  }
+
+  Navigator.of(context).pop({'type': splitType, 'details': result});
+}
+
 
   void _showError(String message) {
 

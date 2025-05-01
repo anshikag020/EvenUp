@@ -10,7 +10,7 @@ abstract class GroupMemberService {
 }
 
 abstract class ExpenseService {
-  Future<List<ExpenseModel>> fetchAllExpenses();
+  Future<List<ExpenseModel>> fetchAllExpenses(String groupID);
 }
 
 abstract class DetailedExpenseService {
@@ -18,6 +18,11 @@ abstract class DetailedExpenseService {
 }
 
 abstract class BalanceService {
-  Future<List<Balance>> fetchBalances();
+  Future<List<Balance>> fetchBalances(String groupId);
+}
+
+abstract class GroupUserPanelService {
+  Future<void> exitGroup(String groupId);
+  // Future<void> deleteGroup(String groupId); 
 }
 

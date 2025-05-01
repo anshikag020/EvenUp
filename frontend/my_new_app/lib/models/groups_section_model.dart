@@ -52,7 +52,7 @@ class GroupMemberModel {
 class ExpenseModel {
   final String expenseID; 
   final String description;
-  final String amount;
+  final int amount;
 
   ExpenseModel({
     required this.expenseID, 
@@ -62,7 +62,7 @@ class ExpenseModel {
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
     return ExpenseModel(
-      expenseID: json['expenseID'],
+      expenseID: json['expense_id'],
       description: json['description'],
       amount: json['amount'],
     );
@@ -70,7 +70,7 @@ class ExpenseModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'expenseID': expenseID,
+      'expense_id': expenseID,
       'description': description,
       'amount': amount,
     };
@@ -79,55 +79,56 @@ class ExpenseModel {
 
 
 class DetailedExpenseModel {
-  final String id;
   final String description;
   final String amount;
+  final String tag; 
   final List<String> paidBy;
   final List<String> owedBy;
   final String lastUpdatedBy;
 
   DetailedExpenseModel({
-    required this.id,
     required this.description,
     required this.amount,
+    required this.tag,
     required this.paidBy,
     required this.owedBy,
     required this.lastUpdatedBy,
   });
 
   factory DetailedExpenseModel.fromJson(Map<String, dynamic> json) {
-    return DetailedExpenseModel(
-      id: json['id'],
-      description: json['description'],
-      amount: json['amount'],
-      paidBy: List<String>.from(json['paidBy']),
-      owedBy: List<String>.from(json['owedBy']),
-      lastUpdatedBy: json['lastUpdatedBy'],
-    );
-  }
+  return DetailedExpenseModel(
+    description: json['description'] ?? '',
+    amount: json['amount'].toString(),
+    tag: json['tag'] ?? '', 
+    paidBy: (json['paid_by'] as Map<String, dynamic>).keys.toList(),
+    owedBy: (json['owed_by'] as Map<String, dynamic>).keys.toList(),
+    lastUpdatedBy: json['last_modified'] ?? '',
+  );
+}
+
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'description': description,
       'amount': amount,
-      'paidBy': paidBy,
-      'owedBy': owedBy,
-      'lastUpdatedBy': lastUpdatedBy,
+      'tag': tag,
+      'paid_by': paidBy,
+      'owed_by': owedBy,
+      'last_modified': lastUpdatedBy,
     };
   }
 }
 
 
 
+
 class Balance {
-  final String balanceID;
+
   final String user1;
   final String user2;
   final int amount;
 
   Balance({
-    required this.balanceID,
     required this.user1,
     required this.user2,
     required this.amount,
@@ -135,18 +136,16 @@ class Balance {
 
   factory Balance.fromJson(Map<String, dynamic> json) {
     return Balance(
-      balanceID: json['balanceID'],
-      user1: json['user1'],
-      user2: json['user2'],
+      user1: json['sender'],
+      user2: json['receiver'],
       amount: json['amount'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'balanceID': balanceID,
-      'user1': user1,
-      'user2': user2,
+      'sender': user1,
+      'receiver': user2,
       'amount': amount,
     };
   }

@@ -1,3 +1,5 @@
+// ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/locator.dart';
@@ -8,7 +10,8 @@ import 'package:my_new_app/utils/all_expenses_utils.dart';
 import '../sections/expense_detailed_box.dart';
 
 class AllExpensesScreen extends StatefulWidget {
-  const AllExpensesScreen({super.key});
+  String groupID; 
+  AllExpensesScreen({super.key, required this.groupID});
 
   @override
   State<AllExpensesScreen> createState() => _AllExpensesScreenState();
@@ -30,7 +33,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
   }
 
   Future<void> _loadExpenses() async {
-    final expenses = await _expenseService.fetchAllExpenses();
+    final expenses = await _expenseService.fetchAllExpenses(widget.groupID); 
     setState(() {
       allExpenses = expenses;
       filteredExpenses = expenses;
@@ -41,9 +44,9 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
   void _filterExpenses(String query) {
     final results = allExpenses.where((expense) {
       final desc = expense.description.toLowerCase();
-      final amount = expense.amount.toLowerCase();
+      // final amount = expense.amount;
       final searchLower = query.toLowerCase();
-      return desc.contains(searchLower) || amount.contains(searchLower);
+      return desc.contains(searchLower) ;
     }).toList();
 
     setState(() {
@@ -128,7 +131,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                       child: ListView.builder(
                         controller: _scrollController,
                         itemCount: filteredExpenses.isEmpty
-                            ? 1
+                            ? 1 
                             : filteredExpenses.length + 1,
                         padding: const EdgeInsets.symmetric(horizontal: 25),
                         itemBuilder: (context, index) {
@@ -168,7 +171,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                           final item = filteredExpenses[index];
                           return ExpenseTile(
                             description: item.description,
-                            amount: item.amount,
+                            amount: item.amount.toString(),
                             onTap: () {
                               showDialog(
                                 context: context,

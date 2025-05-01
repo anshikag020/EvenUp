@@ -1,18 +1,15 @@
 [
     {
-      "balanceID": "XXX123",
       "user1": "Monish",
       "user2": "Yash",
       "amount": 1000
     },
     {
-      "balanceID": "XXX124",
       "user1": "Anirudh",
       "user2": "Monish",
       "amount": 500
     },
     {
-      "balanceID": "XXX125",
       "user1": "Anshika",
       "user2": "Yash",
       "amount": 750
