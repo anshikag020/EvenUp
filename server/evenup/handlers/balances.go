@@ -270,8 +270,11 @@ func SettleBalanceHandler(w http.ResponseWriter, r *http.Request) {
     // Send email notification to the receiver
     // fetch the email of the receiver
     // Step 7.5: Fetch the email of the receiver
-    var receiverEmail string
-    err = tx.QueryRow(`SELECT email FROM users WHERE username = $1`, req.Receiver).Scan(&receiverEmail)
+    var receiverEmail, receiverName string
+    err = tx.QueryRow(`
+        SELECT email, name FROM users WHERE username = $1
+    `, req.Receiver).Scan(&receiverEmail, &receiverName)
+
     if err != nil {
         log.Println("fetch receiver email:", err)
         http.Error(w, "Server error", http.StatusInternalServerError)
@@ -279,8 +282,31 @@ func SettleBalanceHandler(w http.ResponseWriter, r *http.Request) {
     }
     
     // Step 7.6: Send the email notification
+    var senderName, groupName string
+    err = tx.QueryRow(`
+        SELECT name FROM users WHERE username = $1
+    `, username).Scan(&senderName)
+    if err != nil {
+        log.Println("fetch sender name:", err)
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+
+    err = tx.QueryRow(`
+        SELECT group_name FROM groups WHERE group_id = $1
+    `, groupUUID).Scan(&groupName)
+    if err != nil {
+        log.Println("fetch group name:", err)
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+
     subject := "Balance Settlement Initiated"
-    body := fmt.Sprintf("Hi %s,\n\n%s has settled a balance of ₹%.2f with you in group %s.\nPlease open the app and confirm the transaction.\n\nThanks,\nEvenup", req.Receiver, username, amount, req.GroupID)
+    body := fmt.Sprintf(
+        "Hi %s,\n\n%s has settled a balance of ₹%.2f with you in group \"%s\".\nPlease open the app and confirm the transaction.\n\nThanks,\nEvenup",
+        receiverName, senderName, amount, groupName,
+    )
+
 
     go func() {
         if mailErr := services.SendMail([]string{receiverEmail}, subject, body); mailErr != nil {

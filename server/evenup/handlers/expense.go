@@ -1484,7 +1484,7 @@ func EditExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	
 			split := involvedMap[uname]
 			body := fmt.Sprintf(
-				"Hi %s,\n\n%s has updated an expense: \"%s\" of ₹%.2f in your group.\nYou now owe: ₹%.2f\nYou contributed: ₹%.2f\n\nCheck the app for details.\n\nThanks,\nSplitwise Clone",
+				"Hi %s,\n\n%s has updated an expense: \"%s\" of ₹%.2f in your group.\nYou now owe: ₹%.2f\nYou contributed: ₹%.2f\n\nCheck the app for details.\n\nThanks,\nEvenup",
 				uname, username, req.Description, req.Amount, split.Owed, split.Contributed,
 			)
 	
