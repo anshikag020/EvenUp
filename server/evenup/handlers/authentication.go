@@ -359,7 +359,7 @@ func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 
 func VerifyEmailHandler(w http.ResponseWriter, r *http.Request) {
 	// print something
-	log.Println("Verifying email...")
+	// log.Println("Verifying email...")
 	token := r.URL.Query().Get("token")
 	if token == "" {
 		http.Error(w, "Token is required", http.StatusBadRequest)
@@ -367,7 +367,7 @@ func VerifyEmailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := config.DB.Exec(`
-		UPDATE users SET email_verified = true, email_verification_token = NULL
+		UPDATE users SET email_verified = true
 		WHERE email_verification_token = $1
 	`, token)
 
@@ -388,7 +388,7 @@ func VerifyEmailHandler(w http.ResponseWriter, r *http.Request) {
 					font-family: sans-serif;
 					text-align: center;
 					margin-top: 100px;
-					color: #2E8B57;
+					color:rgb(23, 130, 169);
 				}
 				h1 {
 					font-size: 2em;
@@ -396,8 +396,9 @@ func VerifyEmailHandler(w http.ResponseWriter, r *http.Request) {
 			</style>
 		</head>
 		<body>
-			<h1>✅ Your email has been verified successfully!</h1>
+			<h1>Your email has been verified successfully!</h1>
 			<p>You can now log in and use your account.</p>
+			<small>You can close the tab now.</small>
 		</body>
 		</html>
 	`)

@@ -157,9 +157,9 @@ router.Handle(
 router.Handle("/api/transactions/completed", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetCompletedTransactionsHandler)),).Methods("GET")
 
 router.Handle("/api/get_transaction_history", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetTransactionHistory)),).Methods("GET")
-router.PathPrefix("/").Handler(
-	http.FileServer(http.Dir("./public")),
-)
+// router.PathPrefix("/").Handler(
+// 	http.FileServer(http.Dir("./public")),
+// )
 
 // LINK handling
 router.HandleFunc("/api/verify_email", handlers.VerifyEmailHandler).Methods("GET")
