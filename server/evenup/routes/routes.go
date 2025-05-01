@@ -137,6 +137,10 @@ router.Handle(
 	middleware.AuthMiddleware(http.HandlerFunc(handlers.SettleBalanceHandler)),
 ).Methods("PUT")
 
+router.Handle(
+	"/api/remind_user",
+	middleware.AuthMiddleware(http.HandlerFunc(handlers.RemindUserHandler)),
+).Methods("POST")
 
 // transactions routes
 router.Handle(

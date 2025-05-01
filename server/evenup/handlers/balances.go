@@ -327,3 +327,134 @@ func SettleBalanceHandler(w http.ResponseWriter, r *http.Request) {
         "message": "Balance settled successfully",
     })
 }
+
+// RemindUserHandler sends an email reminder to a user who owes money.
+func RemindUserHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+
+    // 1. Auth: Get the sender's username (the one sending the reminder)
+    senderUsername, ok := middleware.GetUsernameFromContext(r)
+    if !ok {
+        http.Error(w, "User not authorized", http.StatusUnauthorized)
+        return
+    }
+
+    // 2. Parse request body
+    var req struct {
+        ReceiverUsername string `json:"receiver_username"` // The user who owes money and will receive the reminder
+        GroupID          string `json:"group_id"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": "Invalid request body",
+        })
+        return
+    }
+
+    // 3. Validate Group ID format
+    groupUUID, err := uuid.Parse(req.GroupID)
+    if err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": "Invalid group_id format",
+        })
+        return
+    }
+
+    // 4. Begin Transaction
+    tx, err := config.DB.Begin()
+    if err != nil {
+        log.Printf("RemindUserHandler: Failed to begin transaction: %v", err)
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+    defer tx.Rollback() // Rollback if any error occurs before commit
+
+    // 5. Verify the balance exists (Receiver owes Sender) and get amount
+    var amount float64
+    // Note: In the balances table, 'sender' is who owes, 'receiver' is who is owed.
+    // So, for a reminder, the request's 'receiver_username' is the 'sender' in the balance table,
+    // and the authenticated user ('senderUsername') is the 'receiver' in the balance table.
+    err = tx.QueryRow(`
+        SELECT amount FROM balances
+        WHERE group_id = $1 AND sender = $2 AND receiver = $3
+    `, groupUUID, req.ReceiverUsername, senderUsername).Scan(&amount)
+
+    if err == sql.ErrNoRows {
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": fmt.Sprintf("No outstanding balance found where %s owes you in this group.", req.ReceiverUsername),
+        })
+        return
+    } else if err != nil {
+        log.Printf("RemindUserHandler: Error querying balance for reminder: %v", err)
+        http.Error(w, "Server error checking balance", http.StatusInternalServerError)
+        return
+    }
+
+    // 6. Fetch receiver's details (email, name)
+    var receiverEmail, receiverName string
+    err = tx.QueryRow(`
+        SELECT email, name FROM users WHERE username = $1
+    `, req.ReceiverUsername).Scan(&receiverEmail, &receiverName)
+    if err != nil {
+        log.Printf("RemindUserHandler: Error fetching receiver details for %s: %v", req.ReceiverUsername, err)
+        // Don't expose specific error, could be user not found or db error
+        http.Error(w, "Server error fetching user details", http.StatusInternalServerError)
+        return
+    }
+
+    // 7. Fetch sender's name
+    var senderName string
+    err = tx.QueryRow(`
+        SELECT name FROM users WHERE username = $1
+    `, senderUsername).Scan(&senderName)
+    if err != nil {
+        log.Printf("RemindUserHandler: Error fetching sender name for %s: %v", senderUsername, err)
+        http.Error(w, "Server error fetching user details", http.StatusInternalServerError)
+        return
+    }
+
+    // 8. Fetch group name
+    var groupName string
+    err = tx.QueryRow(`
+        SELECT group_name FROM groups WHERE group_id = $1
+    `, groupUUID).Scan(&groupName)
+    if err != nil {
+        log.Printf("RemindUserHandler: Error fetching group name for %s: %v", groupUUID, err)
+        http.Error(w, "Server error fetching group details", http.StatusInternalServerError)
+        return
+    }
+
+    // 9. Prepare and send email in a goroutine
+    subject := fmt.Sprintf("Reminder to settle your balance in EvenUp group '%s'", groupName)
+    body := fmt.Sprintf(
+        "Hi %s,\n\nThis is a friendly reminder from %s regarding the EvenUp group \"%s\".\n\nYou currently owe ₹%.2f.\nPlease settle this balance at your earliest convenience.\n\nThanks,\nEvenup",
+        receiverName, senderName, groupName, amount,
+    )
+
+    go func(recipientEmail, mailSubject, mailBody string) {
+        if mailErr := services.SendMail([]string{recipientEmail}, mailSubject, mailBody); mailErr != nil {
+            // Log the error, but don't fail the HTTP request just because email failed
+            log.Printf("RemindUserHandler: Email sending failed to %s: %v", recipientEmail, mailErr)
+        } else {
+            log.Printf("RemindUserHandler: Reminder email sent successfully to %s", recipientEmail)
+        }
+    }(receiverEmail, subject, body) // Pass variables to goroutine
+
+    // 10. Commit Transaction (even though we only read, it's good practice)
+    if err := tx.Commit(); err != nil {
+        log.Printf("RemindUserHandler: Failed to commit transaction: %v", err)
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+
+    // 11. Respond Success
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "status":  true,
+        "message": fmt.Sprintf("Reminder sent successfully to %s.", req.ReceiverUsername),
+    })
+}
