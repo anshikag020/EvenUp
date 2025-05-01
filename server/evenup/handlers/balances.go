@@ -8,6 +8,8 @@ import (
     "github.com/google/uuid"
     "github.com/anshikag020/EvenUp/server/evenup/config"
     "github.com/anshikag020/EvenUp/server/evenup/middleware"
+    "fmt"
+    "github.com/anshikag020/EvenUp/server/evenup/services"
 )
 
 type BalanceEntry struct {
@@ -264,6 +266,27 @@ func SettleBalanceHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Server error", http.StatusInternalServerError)
         return
     }
+
+    // Send email notification to the receiver
+    // fetch the email of the receiver
+    // Step 7.5: Fetch the email of the receiver
+    var receiverEmail string
+    err = tx.QueryRow(`SELECT email FROM users WHERE username = $1`, req.Receiver).Scan(&receiverEmail)
+    if err != nil {
+        log.Println("fetch receiver email:", err)
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+    
+    // Step 7.6: Send the email notification
+    subject := "Balance Settlement Initiated"
+    body := fmt.Sprintf("Hi %s,\n\n%s has settled a balance of ₹%.2f with you in group %s.\nPlease open the app and confirm the transaction.\n\nThanks,\nEvenup", req.Receiver, username, amount, req.GroupID)
+
+    go func() {
+        if mailErr := services.SendMail([]string{receiverEmail}, subject, body); mailErr != nil {
+            log.Println("email sending failed:", mailErr)
+        }
+    }()
 
     // Step 8: Commit
     if err := tx.Commit(); err != nil {
