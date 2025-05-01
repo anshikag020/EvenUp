@@ -212,3 +212,11 @@ curl -X POST http://localhost:8080/api/remind_user \
         "receiver_username": "'"$RECEIVER_USERNAME"'",
         "group_id": "'"$GROUP_ID"'"
       }'
+
+
+16. get friends page
+export TOKEN="<your_jwt_token>"
+
+curl -X GET http://localhost:8080/api/get_friends_page_records \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: application/json"

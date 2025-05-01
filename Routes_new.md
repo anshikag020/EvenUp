@@ -738,6 +738,41 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 }
 ```
 
+### 26. Settle Up in Friends Page
+**Route**: ```/api/settle_up_friends_page```\
+**METHOD**: ```PUT```\
+**Description**: Used for settling up in friends page.\
+**Request body**:
+```json
+{  
+  "friend_name": "string",
+}
+```
+**Response body**:
+```json
+{
+  "status": "bool",         // like: true: Success, false: Failure
+  "message": "string"       // like: "Settle up initiated"
+}
+```
+
+### 27. Remind in Friends Page
+**Route**: ```/api/remind_friends_page```\
+**METHOD**: ```PUT```\
+**Description**: Used for reminding in friends page.\
+**Request body**:
+```json
+{  
+  "friend_name": "string",
+}
+```
+**Response body**:
+```json
+{
+  "status": "bool",         // like: true: Success, false: Failure
+  "message": "string"       // like: "Remind initiated"
+}
+```
 
 
 1. For sending emails, use ```SendGrid```.
