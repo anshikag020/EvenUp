@@ -40,6 +40,16 @@ curl -X POST http://localhost:8080/api/join_group \
            "invite_code": "'"${INVITE_CODE}"'"
          }'
 
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDYxMzQ1NzUsInVzZXJuYW1lIjoiYTEifQ.dQFQxYj0sKsYroEq110Aiy7SfGBCViAh-40xrGGcEOU"
+export INVITE_CODE="BYngNe2e"
+
+curl -X POST http://localhost:8080/api/join_group \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer $TOKEN" \
+     -d '{
+           "invite_code": "'"${INVITE_CODE}"'"
+         }'
+
 
 4. Add expense
 export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NjkxNzIsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.m4YV_CAJqt0CyBZ11JSqvwnmzymgSnC3AillFhG66Xg"
@@ -178,3 +188,27 @@ curl -X PUT http://localhost:8080/api/delete_expense \
 
 15. Verify email
 curl -i -X GET "http://localhost:8080/api/verify_email?token=<YOUR_TOKEN>"
+
+16. Remind User to Settle Balance
+export TOKEN="<your-auth-token>"
+export RECEIVER_USERNAME="<username-who-owes>"
+export GROUP_ID="<group-id-where-debt-exists>"
+
+curl -X POST http://localhost:8080/api/remind_user \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "receiver_username": "'"$RECEIVER_USERNAME"'",
+        "group_id": "'"$GROUP_ID"'"
+      }'
+
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDYxMzQ1NzUsInVzZXJuYW1lIjoiYTEifQ.dQFQxYj0sKsYroEq110Aiy7SfGBCViAh-40xrGGcEOU"
+export RECEIVER_USERNAME="y2"
+export GROUP_ID="6581f6a4-b655-4733-ba9c-d895ed48bc36"
+curl -X POST http://localhost:8080/api/remind_user \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "receiver_username": "'"$RECEIVER_USERNAME"'",
+        "group_id": "'"$GROUP_ID"'"
+      }'
