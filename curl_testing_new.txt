@@ -169,7 +169,7 @@ curl -X GET http://localhost:8080/api/transactions/completed \
   -H "Authorization: Bearer <your-auth-token>"
 
 15. Delete expense
-curl -X POST http://localhost:8080/api/delete_expense \
+curl -X PUT http://localhost:8080/api/delete_expense \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <your_jwt_token>" \
   -d '{

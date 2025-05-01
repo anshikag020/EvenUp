@@ -10,14 +10,14 @@ import(
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	"encoding/json"
 	"github.com/anshikag020/EvenUp/ws_server/pubsub"
-	"github.com/emirpasic/gods/maps/treemap"
-	"github.com/emirpasic/gods/utils"
 	"database/sql"
 	"errors"
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"time"
 	"github.com/google/uuid"
 	"github.com/anshikag020/EvenUp/server/evenup/services"
+	"math"
+	"sort"
 )
 
 type AddExpenseRequest struct {
@@ -65,6 +65,14 @@ func Float64Comparator(a, b interface{}) int {
 		return 0
 	}
 }
+
+type party struct {
+    User   string
+    Amount float64
+}
+
+// and use NewWith(utils.CompositeComparator)…
+
 
 func autoDetectTag(description string) string {
 	desc := strings.ToLower(description)
@@ -345,7 +353,8 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	for user, owedAmount := range req.SplitBetween {
 		netChanges[user] -= owedAmount
 	}
-
+	// print netchanges for each user
+	log.Println("Net changes for each user:", netChanges)
 	err = OptimiseBalances(tx, req.GroupID, netChanges)
 	if err != nil {
 		log.Println("Error optimizing balances:", err)
@@ -443,131 +452,99 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// OptimiseBalances now takes tx (transaction) as an argument
 func OptimiseBalances(tx *sql.Tx, groupID string, netChanges map[string]float64) error {
-	// No need to start a new transaction here, just use the passed tx
+    // 1) Load existing balances
+    rows, err := tx.Query(`
+        SELECT sender, receiver, amount
+        FROM balances
+        WHERE group_id = $1
+    `, groupID)
+    if err != nil {
+        log.Println("Error fetching balances:", err)
+        return err
+    }
+    defer rows.Close()
 
-	// Step 1: Get all balances for the group
-	rows, err := tx.Query(`
-		SELECT sender, receiver, amount
-		FROM balances
-		WHERE group_id = $1
-	`, groupID)
-	if err != nil {
-		log.Println("Error fetching balances:", err)
-		return err
-	}
-	defer rows.Close()
+    userNet := make(map[string]float64)
+    for rows.Next() {
+        var from, to string
+        var amt float64
+        if err := rows.Scan(&from, &to, &amt); err != nil {
+            log.Println("Error scanning balance row:", err)
+            return err
+        }
+        userNet[from] -= amt
+        userNet[to]   += amt
+    }
+    if err := rows.Err(); err != nil {
+        log.Println("Error iterating balances:", err)
+        return err
+    }
 
-	// Step 2: Create map to hold net balances for each user
-	userNet := make(map[string]float64)
+    // 2) Wipe out old balances
+    if _, err := tx.Exec(`
+        DELETE FROM balances
+        WHERE group_id = $1
+    `, groupID); err != nil {
+        log.Println("Error deleting balances:", err)
+        return err
+    }
 
-	// Step 3: Populate userNet with net balances
-	for rows.Next() {
-		var fromUser, toUser string
-		var amount float64
-		if err := rows.Scan(&fromUser, &toUser, &amount); err != nil {
-			log.Println("Error scanning balance row:", err)
-			return err
-		}
+    // 3) Apply in-memory netChanges
+    for user, delta := range netChanges {
+        userNet[user] += delta
+    }
 
-		// Initialize if not already in map
-		if _, exists := userNet[fromUser]; !exists {
-			userNet[fromUser] = 0
-		}
-		if _, exists := userNet[toUser]; !exists {
-			userNet[toUser] = 0
-		}
+    // 4) Build debtor/creditor heaps
+    //    debtors: ascending (most-negative first)
+    // Build slices
+    var creditors []party
+    var debtors  []party
+    for user, bal := range userNet {
+        if bal > 0 {
+            creditors = append(creditors, party{user, bal})
+        } else if bal < 0 {
+            debtors = append(debtors, party{user, bal})
+        }
+    }
 
-		userNet[fromUser] -= amount
-		userNet[toUser] += amount
-	}
+    // Sort creditors descending, debtors ascending
+    sort.Slice(creditors, func(i, j int) bool {
+        return creditors[i].Amount > creditors[j].Amount
+    })
+    sort.Slice(debtors, func(i, j int) bool {
+        return debtors[i].Amount < debtors[j].Amount
+    })
 
-	// Step 4: Delete all balances for the group
-	_, err = tx.Exec(`
-		DELETE FROM balances
-		WHERE group_id = $1
-	`, groupID)
-	if err != nil {
-		log.Println("Error deleting balances:", err)
-		return err
-	}
+    i, j, count := 0, 0, 0
+    for i < len(creditors) && j < len(debtors) {
+        cr := &creditors[i]
+        db := &debtors[j]
 
-	// Step 5: Apply the provided netChanges to the userNet map
-	for user, delta := range netChanges {
-		if _, exists := userNet[user]; !exists {
-			userNet[user] = 0
-		}
-		userNet[user] += delta
-	}
+        settle := math.Min(cr.Amount, -db.Amount)
 
-	// Custom comparator for descending order (reverse of ascending)
-	descendingComparator := func(a, b interface{}) int {
-		return utils.Float64Comparator(b, a) // reverse comparison
-	}
+        // insert into balances table
+        if _, err := tx.Exec(`
+            INSERT INTO balances (group_id, sender, receiver, amount)
+            VALUES ($1, $2, $3, $4)
+        `, groupID, db.User, cr.User, settle); err != nil {
+            return err
+        }
 
-	// Create TreeMaps for debtors and creditors
-	debtors := treemap.NewWith(utils.Float64Comparator)           // ascending order for debtors
-	creditors := treemap.NewWith(descendingComparator) // descending order for creditors
+        cr.Amount -= settle
+        db.Amount += settle
+        count++
 
-	// Fill debtors and creditors based on net balances
-	for user, amount := range userNet {
-		if amount > 0 {
-			creditors.Put(amount, user)
-		} else if amount < 0 {
-			debtors.Put(amount, user)
-		}
-	}
+        if cr.Amount == 0 {
+            i++
+        }
+        if db.Amount == 0 {
+            j++
+        }
+    }
 
-	// Step 6: Settle balances between debtors and creditors
-	for !creditors.Empty() && !debtors.Empty() {
-		// Get top creditor (most positive balance)
-		cKey, cVal := creditors.Min() // key: amount, val: username
-		creditAmount := cKey.(float64)
-		creditUser := cVal.(string)
-
-		// Get top debtor (most negative balance)
-		dKey, dVal := debtors.Min() // key: amount (negative), val: username
-		debitAmount := dKey.(float64)
-		debitUser := dVal.(string)
-
-		// Determine the amount to settle between the two
-		settleAmount := min(creditAmount, -debitAmount)
-
-		// Insert new balance into the balances table
-		_, err := tx.Exec(`
-			INSERT INTO balances (group_id, sender, receiver, amount)
-			VALUES ($1, $2, $3, $4)
-		`, groupID, debitUser, creditUser, settleAmount)
-		if err != nil {
-			log.Println("Failed to insert new balance:", err)
-			return err
-		}
-
-		// Update and reinsert if necessary
-		creditors.Remove(cKey)
-		debtors.Remove(dKey)
-
-		remainingCredit := creditAmount - settleAmount
-		remainingDebit := debitAmount + settleAmount
-
-		if remainingCredit > 0 {
-			creditors.Put(remainingCredit, creditUser)
-		}
-		if remainingDebit < 0 {
-			debtors.Put(remainingDebit, debitUser)
-		}
-	}
-
-	return nil
-}
-
-// Helper function to get the minimum of two values
-func min(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
+    log.Println("Settled transactions count:", count)
+    return nil
 }
 
 type deleteExpenseRequest struct {
