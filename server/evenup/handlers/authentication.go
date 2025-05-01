@@ -9,6 +9,9 @@ import (
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/google/uuid"
+	"fmt"
+	"github.com/anshikag020/EvenUp/server/evenup/services"
 )
 
 func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
@@ -94,6 +97,29 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
+
+	verificationToken := uuid.New().String()
+
+	_, err = tx.Exec(`
+		UPDATE users SET email_verification_token = $1 WHERE email = $2
+	`, verificationToken, req.Email)
+	if err != nil {
+		log.Println("Failed to store verification token:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	verificationLink := fmt.Sprintf("http://localhost:8080/api/verify_email?token=%s", verificationToken)
+	subject := "Verify your Evenup account"
+	body := fmt.Sprintf("Hi %s,\n\nThanks for signing up!\nPlease verify your email:\n\n%s\n\nThanks,\nEvenup Team", req.Name, verificationLink)
+
+	go func() {
+		if mailErr := services.SendMail([]string{req.Email}, subject, body); mailErr != nil {
+			log.Println("Email sending failed:", mailErr)
+		}
+	}()
+
+
+
 	// Commit the transaction
 	// Check for errors in committing the transaction
 	// If there was an error, rollback the transaction
@@ -108,6 +134,7 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 		"status":  true,
 		"message": "User created successfully",
 	})
+	
 }
 
 
@@ -329,3 +356,51 @@ func GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+
+func VerifyEmailHandler(w http.ResponseWriter, r *http.Request) {
+	// print something
+	log.Println("Verifying email...")
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		http.Error(w, "Token is required", http.StatusBadRequest)
+		return
+	}
+
+	result, err := config.DB.Exec(`
+		UPDATE users SET email_verified = true, email_verification_token = NULL
+		WHERE email_verification_token = $1
+	`, token)
+
+	rowsAffected, _ := result.RowsAffected()
+	if err != nil || rowsAffected == 0 {
+		http.Error(w, "Invalid or already used token", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(w, `
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<title>Email Verified</title>
+			<style>
+				body {
+					font-family: sans-serif;
+					text-align: center;
+					margin-top: 100px;
+					color: #2E8B57;
+				}
+				h1 {
+					font-size: 2em;
+				}
+			</style>
+		</head>
+		<body>
+			<h1>✅ Your email has been verified successfully!</h1>
+			<p>You can now log in and use your account.</p>
+		</body>
+		</html>
+	`)
+
+
+}

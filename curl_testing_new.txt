@@ -9,6 +9,14 @@ curl -X POST http://localhost:8080/api/signup \
            "password": "S3cureP@ss!"
          }'
 
+curl -X POST http://localhost:8080/api/signup \
+     -H "Content-Type: application/json" \
+     -d '{
+           "username": "anshikag020",
+           "name":     "Anshika Gupta",
+           "email":    "anshikag020@gmail.com",
+           "password": "S3cureP@ss!"
+         }'
 
 2. Login
 

@@ -48,7 +48,7 @@ func RegisterRoutes(router *mux.Router) {
 		"/api/join_group",
 		middleware.AuthMiddleware(http.HandlerFunc(handlers.JoinGroup)),
 	).Methods("POST")
-	
+
 		// redundant
 	// router.Handle(
 	// 	"/api/get_transaction_history",
@@ -160,6 +160,10 @@ router.Handle("/api/get_transaction_history", middleware.AuthMiddleware(http.Han
 router.PathPrefix("/").Handler(
 	http.FileServer(http.Dir("./public")),
 )
+
+// LINK handling
+router.HandleFunc("/api/verify_email", handlers.VerifyEmailHandler).Methods("GET")
+
 
 }
 

@@ -9,6 +9,7 @@ CREATE TABLE users (
     dark_mode BOOLEAN DEFAULT FALSE,
     email_verified BOOLEAN DEFAULT FALSE
 );
+ALTER TABLE users ADD COLUMN email_verification_token TEXT;
 
 
 CREATE TABLE groups (
