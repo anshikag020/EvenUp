@@ -168,6 +168,6 @@ router.Handle("/api/get_transaction_history", middleware.AuthMiddleware(http.Han
 // LINK handling
 router.HandleFunc("/api/verify_email", handlers.VerifyEmailHandler).Methods("GET")
 
-
+router.HandleFunc("/api/get_friends_page_records", handlers.GetFriendsPageRecords).Methods("GET")
 }
 
