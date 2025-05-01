@@ -97,7 +97,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 ```json
 {  
   "status": "bool",         // like: true: Success, false: Failure
-  "message": "string"       // like: "Password reset link sent to email", "Invalid email"
+  "message": "string"       // like: "OTP sent to email", "Invalid email"
 }
 ```
 
@@ -113,7 +113,8 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 ```json
 {  
   "status": "bool",         // like: true: Success, false: Failure
-  "message": "string"       // like: "OTP verified successfully", "Invalid OTP"
+  "message": "string",    // like: "OTP verified successfully", "Invalid OTP"
+  "reset_token": "string"    // this is returned when the status is true
 }
 ```
 

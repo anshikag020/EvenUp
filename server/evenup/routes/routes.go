@@ -26,6 +26,11 @@ func RegisterRoutes(router *mux.Router) {
 	router.Handle("/api/user/profile",
 		middleware.AuthMiddleware(http.HandlerFunc(handlers.GetUserProfile)),
 	).Methods("GET")
+	// forgot password
+	router.HandleFunc("/api/forgot_password",       handlers.ForgotPasswordHandler).Methods("PUT")
+	router.HandleFunc("/api/confirm_otp",           handlers.ConfirmOtpHandler).Methods("PUT")
+	router.HandleFunc("/api/forgot_reset_password", handlers.ForgotResetPasswordHandler).Methods("PUT")
+
 
 
 	// Protected routes (require JWT auth)

@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"fmt"
 	"github.com/anshikag020/EvenUp/server/evenup/services"
+	"crypto/rand"
 )
 
 func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
@@ -404,4 +405,111 @@ func VerifyEmailHandler(w http.ResponseWriter, r *http.Request) {
 	`)
 
 
+}
+
+
+// ──────────────────────────────── HELPERS ────────────────────────────────
+func randomDigits(n int) (string, error) {
+	bytes := make([]byte, n)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	for i := 0; i < n; i++ {
+		bytes[i] = '0' + (bytes[i] % 10)
+	}
+	return string(bytes), nil
+}
+
+// redis keys helper
+func otpKey(email string) string  { return "fp:otp:" + email }
+func rstKey(email string) string  { return "fp:rset:" + email } // token after OTP verified
+
+
+// ──────────────────────────────── 1) /api/forgot_password ────────────────────────────────
+func ForgotPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct{ Email string `json:"email"` }
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" {
+		http.Error(w, "Invalid email", http.StatusBadRequest); return
+	}
+
+	// verify email exists
+	var exists bool
+	if err := config.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, req.Email).
+		Scan(&exists); err != nil || !exists {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": false, "message": "Invalid email",
+		}); return
+	}
+
+	otp, _ := randomDigits(6)
+	services.SetTemp(otpKey(req.Email), otp, 15*time.Minute) // auto-expire
+
+	// send email
+	subject := "Your Evenup OTP"
+	body := fmt.Sprintf("Your OTP is %s. It’s valid for 15 minutes.", otp)
+	go services.SendMail([]string{req.Email}, subject, body)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": true, "message": "OTP sent to email",
+	})
+}
+
+
+// ──────────────────────────────── 2) /api/confirm_otp ────────────────────────────────
+func ConfirmOtpHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email"`
+		Otp   string `json:"otp"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil ||
+		req.Email == "" || req.Otp == "" {
+		http.Error(w, "Invalid", http.StatusBadRequest); return
+	}
+
+	stored, err := services.GetTemp(otpKey(req.Email))
+	if err != nil || stored != req.Otp {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": false, "message": "Invalid OTP",
+		}); return
+	}
+
+	// OTP correct → create short-lived reset token
+	token, _ := randomDigits(32)
+	services.SetTemp(rstKey(req.Email), token, 30*time.Minute)
+	services.Del(otpKey(req.Email)) // burn OTP
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": true, "message": "OTP verified successfully", "reset_token": token,
+	})
+}
+
+func ForgotResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email       string `json:"email"`
+		ResetToken  string `json:"reset_token"`
+		NewPassword string `json:"new_password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil ||
+		req.Email == "" || req.ResetToken == "" || len(req.NewPassword) < 8 {
+		http.Error(w, "Invalid", http.StatusBadRequest); return
+	}
+
+	tokenStored, err := services.GetTemp(rstKey(req.Email))
+	if err != nil || tokenStored != req.ResetToken {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": false, "message": "Invalid or expired token",
+		}); return
+	}
+
+	hash, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	_, err = config.DB.Exec(`UPDATE users SET password=$1 WHERE email=$2`, string(hash), req.Email)
+	if err != nil {
+		log.Println("reset pwd DB:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError); return
+	}
+
+	services.Del(rstKey(req.Email)) // burn token
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": true, "message": "Password reset successfully",
+	})
 }

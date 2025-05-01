@@ -10,6 +10,7 @@ import (
 	wshdl "github.com/anshikag020/EvenUp/ws_server/handlers"
 	srvhdl "github.com/anshikag020/EvenUp/server/evenup/handlers"	// server handlers
 	"github.com/joho/godotenv"
+	"github.com/anshikag020/EvenUp/server/evenup/services"	// redis
 )
 
 func main(){
@@ -31,6 +32,7 @@ func main(){
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		wshdl.ServeWS(wsHub, w, r)	// handle websocket connection
 	})
+	services.InitRedis()
 
 	log.Println("Starting server on port 8080")	// log message
 	log.Fatal(http.ListenAndServe(":8080", router))	// start server and keep listening for requests
