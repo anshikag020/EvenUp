@@ -90,8 +90,10 @@ CREATE TABLE intermediate_transactions (
     sender VARCHAR(255) REFERENCES users(username),
     receiver VARCHAR(255) REFERENCES users(username),
     amount DECIMAL(10,2) NOT NULL,
-    confirmed BOOLEAN DEFAULT FALSE   -- TODO: ig this is not required, since it is assumed that the sender is the one who confirmed
+    confirmed BOOLEAN DEFAULT FALSE,   -- TODO: ig this is not required, since it is assumed that the sender is the one who confirmed
 );
+
+ALTER TABLE intermediate_transactions ADD COLUMN timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 CREATE TABLE completed_transactions (
     transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

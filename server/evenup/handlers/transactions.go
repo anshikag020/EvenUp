@@ -7,6 +7,8 @@ import (
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"time"
+	"fmt"
+	"github.com/anshikag020/EvenUp/server/evenup/services"
 )
 
 func GetInTransitTransactions(w http.ResponseWriter, r *http.Request) {
@@ -34,6 +36,7 @@ func GetInTransitTransactions(w http.ResponseWriter, r *http.Request) {
 		FROM intermediate_transactions it
 		JOIN groups g ON it.group_id = g.group_id
 		WHERE it.sender = $1 OR it.receiver = $1
+		ORDER BY it.timestamp DESC
 	`, username)
 	if err != nil {
 		log.Println("query intermediate_transactions:", err)
@@ -175,6 +178,39 @@ func InTransitAcceptHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
+	// ---------- Step 6.5 – collect names/emails BEFORE we commit ----------
+	var senderName, senderEmail, receiverName, groupName string
+
+	// get sender
+	if err := tx.QueryRow(`
+			SELECT name, email
+			FROM   users
+			WHERE  username = $1
+	`, sender).Scan(&senderName, &senderEmail); err != nil {
+		log.Println("notify-mail: fetch sender:", err)
+		// we don’t abort the txn; just skip email later
+	}
+
+	// get receiver
+	if err := tx.QueryRow(`
+			SELECT name
+			FROM   users
+			WHERE  username = $1
+	`, receiver).Scan(&receiverName); err != nil {
+		log.Println("notify-mail: fetch receiver:", err)
+	}
+
+	// get group name
+	if err := tx.QueryRow(`
+			SELECT group_name
+			FROM   groups
+			WHERE  group_id = $1
+	`, groupID).Scan(&groupName); err != nil {
+		log.Println("notify-mail: fetch group name:", err)
+	}
+
+	// ----------------------------------------------------------------------
+
 
 	// Step 7: Commit transaction
 	if err := tx.Commit(); err != nil {
@@ -182,6 +218,19 @@ func InTransitAcceptHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
+	go func() {
+		if senderEmail == "" { // nothing to send
+			return
+		}
+		subject := "Settlement confirmed"
+		body := fmt.Sprintf(
+			"Hi %s,\n\n%s has confirmed settlement of ₹%.2f with you in the group “%s”.\n\nThanks for using Evenup!",
+			senderName, receiverName, amount, groupName,
+		)
+		if err := services.SendMail([]string{senderEmail}, subject, body); err != nil {
+			log.Println("notify-mail: send failed:", err)
+		}
+	}()
 
 	// Step 8: Success response
 	json.NewEncoder(w).Encode(map[string]interface{}{
