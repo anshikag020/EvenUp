@@ -302,10 +302,18 @@ func GetCompletedTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Step 2: Query completed_transactions
 	rows, err := config.DB.Query(`
-		SELECT transaction_id, group_id, sender, receiver, amount, timestamp
-		FROM completed_transactions
-		WHERE sender = $1 OR receiver = $1
-		ORDER BY timestamp DESC
+		SELECT 
+			ct.transaction_id, 
+			g.group_name,   
+			ct.sender, 
+			ct.receiver, 
+			ct.amount, 
+			ct.timestamp
+		FROM completed_transactions ct
+		JOIN groups g ON ct.group_id = g.group_id
+		WHERE ct.sender = $1 OR ct.receiver = $1
+		ORDER BY ct.timestamp DESC;
+
 	`, username)
 	if err != nil {
 		log.Println("query completed_transactions:", err)
@@ -317,7 +325,7 @@ func GetCompletedTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 	// Step 3: Build response
 	type Transaction struct {
 		TransactionID string    `json:"transaction_id"`
-		GroupID       string    `json:"group_id"`
+		GroupName       string    `json:"group_name"`
 		Sender        string    `json:"sender"`
 		Receiver      string    `json:"receiver"`
 		Amount        float64   `json:"amount"`
@@ -327,7 +335,7 @@ func GetCompletedTransactionsHandler(w http.ResponseWriter, r *http.Request) {
 	var transactions []Transaction
 	for rows.Next() {
 		var t Transaction
-		err := rows.Scan(&t.TransactionID, &t.GroupID, &t.Sender, &t.Receiver, &t.Amount, &t.Timestamp)
+		err := rows.Scan(&t.TransactionID, &t.GroupName, &t.Sender, &t.Receiver, &t.Amount, &t.Timestamp)
 		if err != nil {
 			log.Println("scan row:", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)

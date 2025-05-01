@@ -156,6 +156,7 @@ router.Handle(
 
 router.Handle("/api/transactions/completed", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetCompletedTransactionsHandler)),).Methods("GET")
 
+router.Handle("/api/get_transaction_history", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetTransactionHistory)),).Methods("GET")
 router.PathPrefix("/").Handler(
 	http.FileServer(http.Dir("./public")),
 )

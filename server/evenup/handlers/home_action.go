@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	//"log"
 	"github.com/anshikag020/EvenUp/server/evenup/config"
@@ -11,8 +12,9 @@ import (
 
 	//"golang.org/x/crypto/bcrypt"
 
-	"github.com/google/uuid"
 	"log"
+
+	"github.com/google/uuid"
 )
 
 func GetUserDetails (w http.ResponseWriter, r *http.Request) {
@@ -381,19 +383,22 @@ func GetTransactionHistory(w http.ResponseWriter, r *http.Request) {
     // Query the transaction history for the user
     rows, err := config.DB.Query(`
         SELECT 
-            transaction_id, 
-            CASE 
-                WHEN sender = $1 THEN receiver 
-                WHEN receiver = $1 THEN sender
-            END AS other_user,
-            CASE 
-                WHEN sender = $1 THEN TRUE 
-                WHEN receiver = $1 THEN FALSE
-            END AS is_sender,
-            amount,
-            timestamp
-        FROM completed_transactions
-        WHERE sender = $1 OR receiver = $1;
+			ct.transaction_id, 
+			g.group_name, 
+			CASE 
+				WHEN ct.sender = $1 THEN ct.receiver 
+				WHEN ct.receiver = $1 THEN ct.sender
+			END AS other_user,
+			CASE 
+				WHEN ct.sender = $1 THEN TRUE 
+				WHEN ct.receiver = $1 THEN FALSE
+			END AS is_sender,
+			ct.amount,
+			ct.timestamp
+		FROM completed_transactions ct
+		JOIN groups g ON ct.group_id = g.group_id
+		WHERE ct.sender = $1 OR ct.receiver = $1;
+
     `, username)
     if err != nil {
         http.Error(w, "Failed to fetch transaction history", http.StatusInternalServerError)
@@ -406,12 +411,13 @@ func GetTransactionHistory(w http.ResponseWriter, r *http.Request) {
     
     for rows.Next() {
         var transactionID uuid.UUID
+		var group_name string
         var otherUser string
         var isSender bool
         var amount float64
-        var timestamp string // Add a timestamp field to capture the transaction timestamp
+        var timestamp time.Time // Add a timestamp field to capture the transaction timestamp
 
-        err := rows.Scan(&transactionID, &otherUser, &isSender, &amount, &timestamp)
+        err := rows.Scan(&transactionID, &group_name, &otherUser, &isSender, &amount, &timestamp)
         if err != nil {
             http.Error(w, "Failed to scan transaction", http.StatusInternalServerError)
             return
@@ -420,9 +426,10 @@ func GetTransactionHistory(w http.ResponseWriter, r *http.Request) {
         transactions = append(transactions, map[string]interface{}{
             "transaction_id": transactionID.String(),
             "other_user":     otherUser,
+			"group_name":     group_name, 
             "is_sender":      isSender,
             "amount":         amount,
-            "timestamp":      timestamp, // Include the timestamp in the response
+            "timestamp":      timestamp.Format("02 Jan 2006 15:04"), // Include the timestamp in the response
         })
     }
 
