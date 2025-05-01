@@ -490,7 +490,7 @@ func ForgotResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		NewPassword string `json:"new_password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil ||
-		req.Email == "" || req.ResetToken == "" || len(req.NewPassword) < 8 {
+		req.Email == "" || req.ResetToken == "" {
 		http.Error(w, "Invalid", http.StatusBadRequest); return
 	}
 

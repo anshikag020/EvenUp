@@ -245,3 +245,20 @@ curl -X PUT -H "Content-Type: application/json" \
 curl -X PUT http://localhost:8080/api/in_transit_accept   -H "Authorization: Bearer $TOKEN"   -H "Content-Type: application/json"   -d '{                       
         "transaction_id": "ad548f1b-d7cb-4429-82a0-372756ceb7ff"
       }'
+
+18. Analysis
+export TOKEN="Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDYxNDQ0NTgsInVzZXJuYW1lIjoiYW5zaGlrYWcwMjAifQ.BC7LG5-_Nc5JhufMvErOFk5RySdaiyNyojisX05Gcfo"
+
+curl -X POST http://localhost:8080/api/get_analysis \
+  -H "Authorization: $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "group_ids": [
+          "3b2f4252-a1f5-4e0e-8997-d7a0cf053614",
+          "91ec7fc1-8ed7-45b7-b91a-df4ad3985ac5"
+        ],
+        "categories": ["food", "transport"],
+        "time_range": "1 Month"
+      }'
+
+19. 

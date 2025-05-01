@@ -11,9 +11,10 @@ import (
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 
 	//"golang.org/x/crypto/bcrypt"
-
+	"github.com/lib/pq"
 	"log"
-
+	"strconv"
+	"strings"
 	"github.com/google/uuid"
 )
 
@@ -444,4 +445,155 @@ func GetTransactionHistory(w http.ResponseWriter, r *http.Request) {
         "status":      true,
         "transactions": transactions,
     })
+}
+
+
+
+// tag ↔ int mapping used in your schema
+var tagStrToInt = map[string]int{
+	"food":       0,
+	"transport":  1,
+	"entertainment": 2,
+	"shopping":   3,
+	"bills":      4,
+	"other":      5,
+}
+var tagIntToStr = func() map[int]string {
+	m := make(map[int]string)
+	for k, v := range tagStrToInt {
+		m[v] = k
+	}
+	return m
+}()
+
+func rangeToSince(ts string) *time.Time {
+	now := time.Now()
+	switch strings.ToLower(strings.TrimSpace(ts)) {
+	case "1 week":
+		t := now.AddDate(0, 0, -7); return &t
+	case "1 month":
+		t := now.AddDate(0, -1, 0); return &t
+	case "3 months":
+		t := now.AddDate(0, -3, 0); return &t
+	case "6 months":
+		t := now.AddDate(0, -6, 0); return &t
+	case "1 year":
+		t := now.AddDate(-1, 0, 0); return &t
+	default: // "all time" or unknown
+		return nil
+	}
+}
+
+// ---------- request / response  -----------------------------------------
+
+type analysisRequest struct {
+	GroupIDs   []string `json:"group_ids"`
+	Categories []string `json:"categories"`
+	TimeRange  string   `json:"time_range"`
+}
+
+type analysisResponse struct {
+	Status               bool               `json:"status"`
+	TotalAmountSpent     float64            `json:"total_amount_spent"`
+	PerGroupBreakdown    map[string]float64 `json:"per_group_breakdown"`
+	PerCategoryBreakdown map[string]float64 `json:"per_category_breakdown"`
+}
+
+// ---------- main handler -----------------------------------------------
+
+func GetAnalysis(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// -------- 0) auth ----------------------------------------------------
+	user, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	// -------- 1) parse body ---------------------------------------------
+	var req analysisRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// -------- 2) build dynamic WHERE ------------------------------------
+	var whereParts []string
+	var args []interface{}
+	add := func(v interface{}) string {
+		args = append(args, v)
+		return "$" + strconv.Itoa(len(args))
+	}
+
+	// mandatory: this user’s share only
+	whereParts = append(whereParts, "bs.username = "+add(user))
+
+	if len(req.GroupIDs) != 0 {
+		whereParts = append(whereParts, "e.group_id = ANY("+add(pq.Array(req.GroupIDs))+")")
+	}
+	if len(req.Categories) != 0 {
+		var tagInts []int
+		for _, c := range req.Categories {
+			if t, ok := tagStrToInt[strings.ToLower(c)]; ok {
+				tagInts = append(tagInts, t)
+			}
+		}
+		if len(tagInts) > 0 {
+			whereParts = append(whereParts, "e.tag = ANY("+add(pq.Array(tagInts))+")")
+		}
+	}
+	if since := rangeToSince(req.TimeRange); since != nil {
+		whereParts = append(whereParts, "e.timestamp >= "+add(*since))
+	}
+
+	whereSQL := strings.Join(whereParts, " AND ")
+
+	// -------- 3) run query ----------------------------------------------
+	/*
+	   We sum bs.amount_owed (the user’s share) per group+tag.
+	*/
+	q := fmt.Sprintf(`
+		SELECT e.group_id, e.tag, SUM(bs.amount_owed)
+		FROM   expenses      e
+		JOIN   bill_split    bs ON bs.expense_id = e.expense_id
+		WHERE  %s
+		GROUP  BY e.group_id, e.tag
+	`, whereSQL)
+
+	rows, err := config.DB.Query(q, args...)
+	if err != nil {
+		log.Println("analysis query:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	total := 0.0
+	perGroup    := map[string]float64{}
+	perCategory := map[string]float64{}
+
+	for rows.Next() {
+		var gid string
+		var tag int
+		var owed float64
+		if err := rows.Scan(&gid, &tag, &owed); err != nil {
+			log.Println("scan row:", err)
+			continue
+		}
+		total += owed
+		perGroup[gid] += owed
+		perCategory[tagIntToStr[tag]] += owed
+	}
+	if err := rows.Err(); err != nil {
+		log.Println("row err:", err)
+	}
+
+	// -------- 4) respond -----------------------------------------------
+	json.NewEncoder(w).Encode(analysisResponse{
+		Status:               true,
+		TotalAmountSpent:     total,
+		PerGroupBreakdown:    perGroup,
+		PerCategoryBreakdown: perCategory,
+	})
 }
