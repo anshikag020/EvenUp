@@ -851,6 +851,7 @@ type GetExpensesResponse struct {
 
 // GetExpenses returns the list of expenses for a group,
 // filtering by the current user for grey‐type groups.
+//TODO: amount is not returned for each user, last updated is not returned, instead time is
 func GetExpenses(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 

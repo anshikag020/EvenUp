@@ -119,3 +119,23 @@ curl -X PUT http://localhost:8080/api/settle_balance \
         "group_id": "'"$GROUP_ID"'"
       }'
 
+
+10. Accept Settle
+
+curl -X PUT http://localhost:8080/api/in_transit_accept \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "transaction_id": "YOUR_TRANSACTION_ID_HERE"
+      }'
+
+
+11. In transit reject
+
+curl -X PUT http://localhost:8080/api/in_transit_reject \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "transaction_id": "YOUR_TRANSACTION_ID_HERE"
+      }'
+

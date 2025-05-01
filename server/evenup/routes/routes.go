@@ -114,7 +114,10 @@ router.Handle(
 	middleware.AuthMiddleware(http.HandlerFunc(handlers.EditExpenseHandler)),
 ).Methods("PUT")
 
-
+router.Handle(
+	"/api/delete_expense",
+	middleware.AuthMiddleware(http.HandlerFunc(handlers.DeleteExpenseHandler)),
+).Methods("PUT")
 
 
 
@@ -127,6 +130,23 @@ router.Handle(
 router.Handle(
 	"/api/settle_balance",
 	middleware.AuthMiddleware(http.HandlerFunc(handlers.SettleBalanceHandler)),
+).Methods("PUT")
+
+
+// transactions routes
+router.Handle(
+	"/api/get_in_transit_transactions",
+	middleware.AuthMiddleware(http.HandlerFunc(handlers.GetInTransitTransactions)),
+).Methods("GET")
+
+router.Handle(
+	"/api/in_transit_accept",
+	middleware.AuthMiddleware(http.HandlerFunc(handlers.InTransitAcceptHandler)),
+).Methods("PUT")
+
+router.Handle(
+	"/api/in_transit_reject",
+	middleware.AuthMiddleware(http.HandlerFunc(handlers.InTransitRejectHandler)),
 ).Methods("PUT")
 
 }

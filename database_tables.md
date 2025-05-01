@@ -19,6 +19,10 @@
 5. Unique invite code
 6. Admin\
 
+## OTS Groups
+1. group id
+2. confirmed (0/1)
+
 ## OTS groups participants
 1. group id
 2. user name

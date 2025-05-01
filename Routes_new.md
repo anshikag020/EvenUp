@@ -456,7 +456,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 }
 ```
 
-### SETTLE BALANCE
+### SETTLE BALANCE    (done)
 **Route**: ```/api/settle_balance```\
 **METHOD**: ```PUT```\
 **Description**: Used for settling a balance.\
@@ -498,7 +498,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 
 ## in_transit Page
 
-### 19. GET IN TRANSIT TRANSACTIONS
+### 19. GET IN TRANSIT TRANSACTIONS     (done)
 **Route**: ```/api/get_in_transit_transactions```\
 **METHOD**: ```GET```\
 **Description**: Used for getting in_transit transactions.\ 
@@ -523,7 +523,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 }
 ```
 
-### 20. IN TRANSIT ACCEPT
+### 20. IN TRANSIT ACCEPT   (done)
 **Route**: ```/api/in_transit_accept```\
 **METHOD**: ```PUT```\
 **Description**: Used for accepting a in_transit transaction.\
@@ -531,8 +531,6 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 ```json
 {  
   "transaction_id": "string",
-  "username": "string",
-  "cookie"
 }
 ```
 **Response**:
@@ -543,7 +541,7 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 }
 ```
 
-### 21. IN TRANSIT REJECT
+### 21. IN TRANSIT REJECT   (done)
 **Route**: ```/api/in_transit_reject```\
 **METHOD**: ```PUT```\
 **Description**: Used for rejecting a in_transit transaction.\
