@@ -48,11 +48,12 @@ func RegisterRoutes(router *mux.Router) {
 		"/api/join_group",
 		middleware.AuthMiddleware(http.HandlerFunc(handlers.JoinGroup)),
 	).Methods("POST")
-
-	router.Handle(
-		"/api/get_transaction_history",
-		middleware.AuthMiddleware(http.HandlerFunc(handlers.GetTransactionHistory)),
-	).Methods("GET")
+	
+		// redundant
+	// router.Handle(
+	// 	"/api/get_transaction_history",
+	// 	middleware.AuthMiddleware(http.HandlerFunc(handlers.GetTransactionHistory)),
+	// ).Methods("GET")
 
 
 	// Groups page actions (all require a valid JWT)
@@ -86,6 +87,10 @@ router.Handle(
     middleware.AuthMiddleware(http.HandlerFunc(handlers.DeleteGroup)),
 ).Methods("DELETE")
 
+router.Handle(
+	"/api/ots/confirm",
+	middleware.AuthMiddleware(http.HandlerFunc(handlers.ConfirmOtsParticipationHandler)),
+).Methods("PUT")
 
 
 // Expenses routes (all protected; use POST to create)
@@ -148,6 +153,9 @@ router.Handle(
 	"/api/in_transit_reject",
 	middleware.AuthMiddleware(http.HandlerFunc(handlers.InTransitRejectHandler)),
 ).Methods("PUT")
+
+router.Handle("/api/transactions/completed", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetCompletedTransactionsHandler)),).Methods("GET")
+
 
 }
 

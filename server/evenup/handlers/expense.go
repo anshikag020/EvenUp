@@ -180,6 +180,52 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Step 1.5: Check if group is OTS and confirmed
+	var groupType int
+	err = tx.QueryRow(`SELECT group_type FROM groups WHERE group_id = $1`, req.GroupID).Scan(&groupType)
+	if err != nil {
+		log.Println("Failed to get group type:", err)
+		json.NewEncoder(w).Encode(AddExpenseResponse{
+			Status:  false,
+			Message: "Internal server error",
+		})
+		responded = true
+		return
+	}
+
+	if groupType == 0 {
+		var confirmed bool
+		err = tx.QueryRow(`SELECT confirmed FROM ots_group_participants WHERE group_id = $1 AND user_name = $2`, req.GroupID, username).Scan(&confirmed)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(AddExpenseResponse{
+					Status:  false,
+					Message: "OTS group confirmation info not found",
+				})
+			} else {
+				log.Println("Failed to get OTS confirmation:", err)
+				json.NewEncoder(w).Encode(AddExpenseResponse{
+					Status:  false,
+					Message: "Internal server error",
+				})
+			}
+			err = errors.New("OTS group confirmation check failed")
+			responded = true
+			return
+		}
+
+		if confirmed {
+			json.NewEncoder(w).Encode(AddExpenseResponse{
+				Status:  false,
+				Message: "Expenses cannot be added to this group anymore",
+			})
+			err = errors.New("OTS group already confirmed")
+			responded = true
+			return
+		}
+	}
+
+	
 	// Step 2: Validate users in the group
 	userSet := map[string]bool{}
 	for u := range req.SplitBetween {
@@ -516,6 +562,44 @@ func DeleteExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		respond(w, false, "Internal server error")
 		return
 	}
+	// ------------------------------------------------------
+// 1.5 Check if group is OTS and already confirmed
+// ------------------------------------------------------
+	var groupType int
+	err = tx.QueryRow(`
+		SELECT group_type FROM groups
+		WHERE group_id = $1
+	`, groupID).Scan(&groupType)
+	if err != nil {
+		log.Println("group type lookup:", err)
+		respond(w, false, "Internal server error")
+		return
+	}
+
+	if groupType == 0 {
+		var confirmed bool
+		err = tx.QueryRow(`
+			SELECT confirmed FROM ots_group_participants
+			WHERE group_id = $1 AND user_name = $2
+		`, groupID, username).Scan(&confirmed)
+
+
+		if err != nil {
+			if err == sql.ErrNoRows {
+				respond(w, false, "OTS group confirmation info not found")
+			} else {
+				log.Println("OTS confirmation fetch:", err)
+				respond(w, false, "Internal server error")
+			}
+			return
+		}
+
+		if confirmed {
+			respond(w, false, "Expenses cannot be deleted anymore")
+			return
+		}
+	}
+
 
 	//-------------------------------------------------------
 	// 2. make sure the requesting user is in the group
@@ -677,8 +761,6 @@ type getExpenseDetailsResp struct {
 }
 
 
-// TODO: change this a little....when we send the list of all expenses ...just send the details of them too
-// TODO: amount, description, paid by, contributed, last_updated_by, tag
 	
 func GetExpenseDetails(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -851,7 +933,6 @@ type GetExpensesResponse struct {
 
 // GetExpenses returns the list of expenses for a group,
 // filtering by the current user for grey‐type groups.
-//TODO: amount is not returned for each user, last updated is not returned, instead time is
 func GetExpenses(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 
@@ -923,7 +1004,7 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
             WHERE e.group_id = $1
               AND bs.username = $2
               AND (bs.amount_contributed <> 0 OR bs.amount_owed <> 0)
-            ORDER BY e.timestamp
+            ORDER BY e.timestamp DESC
         `, groupUUID, username)
     } else {
         // Others: all expenses
@@ -931,7 +1012,7 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
             SELECT expense_id, description, tag, added_by, amount
             FROM expenses
             WHERE group_id = $1
-            ORDER BY timestamp
+            ORDER BY timestamp DESC
         `, groupUUID)
     }
     if err != nil {
@@ -1067,6 +1148,40 @@ func EditExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("query group_id:", err)
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
+	}
+
+	// 1.5: Check if the group is an OTS group and already confirmed
+	var groupType int
+	err = tx.QueryRow(`SELECT group_type FROM groups WHERE group_id = $1`, groupID).Scan(&groupType)
+	if err != nil {
+		log.Println("fetch group_type:", err)
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	if groupType == 0 {
+		var confirmed bool
+		err = tx.QueryRow(`SELECT confirmed FROM ots_group_participants WHERE group_id = $1 AND user_name=$2`, groupID, username).Scan(&confirmed)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"status":  false,
+					"message": "OTS group confirmation status not found",
+				})
+			} else {
+				log.Println("fetch ots_groups.confirmed:", err)
+				http.Error(w, "Server error", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		if confirmed {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"status":  false,
+				"message": "Expenses cannot be edited anymore",
+			})
+			return
+		}
 	}
 
 	// 2. Get all members currently in the group

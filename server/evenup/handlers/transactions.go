@@ -6,6 +6,7 @@ import (
 	"log"
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
+	"time"
 )
 
 func GetInTransitTransactions(w http.ResponseWriter, r *http.Request) {
@@ -286,6 +287,65 @@ func InTransitRejectHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
 		"message": "Transaction rejected successfully",
+	})
+}
+
+func GetCompletedTransactionsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Step 1: Auth
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Step 2: Query completed_transactions
+	rows, err := config.DB.Query(`
+		SELECT transaction_id, group_id, sender, receiver, amount, timestamp
+		FROM completed_transactions
+		WHERE sender = $1 OR receiver = $1
+		ORDER BY timestamp DESC
+	`, username)
+	if err != nil {
+		log.Println("query completed_transactions:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Step 3: Build response
+	type Transaction struct {
+		TransactionID string    `json:"transaction_id"`
+		GroupID       string    `json:"group_id"`
+		Sender        string    `json:"sender"`
+		Receiver      string    `json:"receiver"`
+		Amount        float64   `json:"amount"`
+		Timestamp     time.Time `json:"timestamp"`
+	}
+
+	var transactions []Transaction
+	for rows.Next() {
+		var t Transaction
+		err := rows.Scan(&t.TransactionID, &t.GroupID, &t.Sender, &t.Receiver, &t.Amount, &t.Timestamp)
+		if err != nil {
+			log.Println("scan row:", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		transactions = append(transactions, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("iterate rows:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Step 4: Return response
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":       true,
+		"transactions": transactions,
 	})
 }
 

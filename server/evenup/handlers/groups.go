@@ -684,3 +684,142 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 
+
+func ConfirmOtsParticipationHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	username, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		GroupID string `json:"group_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	tx, err := config.DB.Begin()
+	if err != nil {
+		log.Println("begin tx:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	// Step 1: Check group exists
+	var groupExists bool
+	err = tx.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM groups WHERE group_id = $1
+		)
+	`, req.GroupID).Scan(&groupExists)
+	if err != nil {
+		log.Println("check group existence:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if !groupExists {
+		http.Error(w, "Group not found", http.StatusNotFound)
+		return
+	}
+
+	// Step 2: Check user is in group
+	var isParticipant bool
+	err = tx.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM group_participants
+			WHERE group_id = $1 AND participant = $2
+		)
+	`, req.GroupID, username).Scan(&isParticipant)
+	if err != nil {
+		log.Println("check participant:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if !isParticipant {
+		http.Error(w, "You are not a participant in this group", http.StatusForbidden)
+		return
+	}
+
+	// Step 3: Check current confirmation status
+	var confirmed bool
+	err = tx.QueryRow(`
+		SELECT confirmed FROM ots_group_participants
+		WHERE group_id = $1 AND user_name = $2
+	`, req.GroupID, username).Scan(&confirmed)
+
+	if err == sql.ErrNoRows {
+		// No row exists — insert it with TRUE
+		_, err = tx.Exec(`
+			INSERT INTO ots_group_participants (group_id, user_name, confirmed)
+			VALUES ($1, $2, TRUE)
+		`, req.GroupID, username)
+		if err != nil {
+			log.Println("insert confirmation:", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+	} else if err != nil {
+		log.Println("fetch confirmation:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	} else if confirmed {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status":  true,
+			"message": "Already confirmed",
+		})
+		return
+	} else {
+		// Update to TRUE
+		_, err = tx.Exec(`
+			UPDATE ots_group_participants
+			SET confirmed = TRUE
+			WHERE group_id = $1 AND user_name = $2
+		`, req.GroupID, username)
+		if err != nil {
+			log.Println("update confirmation:", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Step 4: Check if ALL participants have confirmed
+	var allConfirmed bool
+	err = tx.QueryRow(`
+		SELECT NOT EXISTS (
+			SELECT 1 FROM ots_group_participants
+			WHERE group_id = $1 AND confirmed = FALSE
+		)
+	`, req.GroupID).Scan(&allConfirmed)
+	if err != nil {
+		log.Println("check all confirmations:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if allConfirmed {
+		_, err = tx.Exec(`
+			UPDATE ots_groups SET confirmed = TRUE WHERE group_id = $1
+		`, req.GroupID)
+		if err != nil {
+			log.Println("update ots_groups confirmed:", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Println("tx commit:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":  true,
+		"message": "TRUE",
+	})
+}

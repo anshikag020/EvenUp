@@ -246,8 +246,6 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
 **Request body**:
 ```json
 {  
-  "username": "string",
-  "cookie"
 }
 ```
 **Response**:
@@ -680,6 +678,66 @@ Redis (or similar) if you need high throughput, simpler schema, and automatic TT
   "message": "string"       // like: "Expense added successfully", "Group not found", "Some user has left the group"
 }
 ```
+### 24. Get Analysis
+**Route**: ```/api/get_analysis```\
+**METHOD**: ```GET```\
+**Description**: Used for getting analysis of a group.\
+**Request body**:
+```json
+{
+  "group_ids": ["uuid-1", "uuid-2", "uuid-3"],        // List of selected group UUIDs
+  "categories": ["food", "transport", "shopping"],    // List of selected category strings
+  "time_range": "1 Month",                            // Options: "1 Week", "1 Month", "3 Months", "6 Months", "1 Year", "All Time"
+  "type": "spent"                                     // Either "spent" or "received"
+}
+```
+**Response**:
+```json
+{
+  "status": "bool",         // like: true: Success, false: Failure
+  "message": "string"  ,     // like: "Analysis fetched successfully", "Group not found"
+  "analysis": [
+    {
+      "group_id": "uuid-1",
+      "total_spent": 1000,
+      "total_received": 500,
+      "category_analysis": {
+        "food": 300,
+        "transport": 200,
+        "shopping": 500
+      }
+    },
+    {
+      "group_id": "uuid-2",
+    }
+  ]
+}
+```
+
+### 25. Get Friends Page records
+**Route**: ```/api/get_friends_page_records```\
+**METHOD**: ```GET```\
+**Description**: Used for getting friends page records.\
+**Request body**:
+```json
+{  
+}
+```
+**Response**:
+```json
+{  
+  "status": "bool",         // like: true: Success, false: Failure
+  "friends": [
+    "sender" : "string",
+    "reciever": "string",
+    "name" : "string",
+    "balance" : "float",
+    "group_id" : "string",
+    "group_name" : "string",
+  ]
+}
+```
+
 
 
 1. For sending emails, use ```SendGrid```.

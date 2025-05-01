@@ -16,7 +16,7 @@ func ConnectDB() {
 															// TODO: make sure everyones password is same
 															// TODO: sslmode?
 	// connStr := "Enter your db connection link here" 
-	connStr := "postgresql://postgres:monishdatabase@localhost/evenuptrial"
+	connStr := "postgresql://postgres:123456@localhost/evenup_trial"
 
 	DB, err = sql.Open("postgres", connStr)
 

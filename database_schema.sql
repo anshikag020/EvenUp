@@ -45,6 +45,11 @@ CREATE TABLE ots_group_participants (
     PRIMARY KEY (group_id, user_name)
 );
 
+CREATE TABLE ots_groups (
+    group_id UUID PRIMARY KEY REFERENCES groups(group_id) ON DELETE CASCADE,
+    confirmed BOOLEAN DEFAULT FALSE
+);
+
 CREATE TABLE expenses (
     expense_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     group_id UUID REFERENCES groups(group_id) ON DELETE CASCADE,

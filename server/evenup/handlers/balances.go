@@ -184,6 +184,46 @@ func SettleBalanceHandler(w http.ResponseWriter, r *http.Request) {
     }
     defer tx.Rollback()
 
+    // Check if this is an OTS group and whether all users confirmed
+    var groupType int
+    err = tx.QueryRow(`
+        SELECT group_type FROM groups WHERE group_id = $1
+    `, groupUUID).Scan(&groupType)
+
+    if err != nil {
+        log.Println("fetch group_type:", err)
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
+
+    if groupType == 0 {
+        var confirmed bool
+        err = tx.QueryRow(`
+            SELECT confirmed FROM ots_groups WHERE group_id = $1
+        `, groupUUID).Scan(&confirmed)
+
+        if err != nil {
+            if err == sql.ErrNoRows {
+                json.NewEncoder(w).Encode(map[string]interface{}{
+                    "status":  false,
+                    "message": "OTS group status not found",
+                })
+                return
+            }
+            log.Println("fetch ots confirmation:", err)
+            http.Error(w, "Server error", http.StatusInternalServerError)
+            return
+        }
+
+        if !confirmed {
+            json.NewEncoder(w).Encode(map[string]interface{}{
+                "status":  false,
+                "message": "All members have not confirmed in this OTS group",
+            })
+            return
+        }
+    }
+
     // Step 5: Get the balance
     var amount float64
     err = tx.QueryRow(`

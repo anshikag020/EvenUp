@@ -110,18 +110,31 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If the group is OTS, insert the admin into the ots_group_participants table
+	// and insert an entry into ots_groups with confirmed = false
 	if groupType == 0 {
-		_, err = tx.Exec(
-			"INSERT INTO ots_group_participants (group_id, user_name) VALUES ($1, $2)",
-			groupID, username,
-		)
+		_, err = tx.Exec(`
+			INSERT INTO ots_group_participants (group_id, user_name, confirmed)
+			VALUES ($1, $2, FALSE)
+		`, groupID, username)
 		if err != nil {
 			tx.Rollback()
 			log.Println("Error inserting into ots_group_participants:", err)
 			http.Error(w, "Failed to add admin to OTS participants", http.StatusInternalServerError)
 			return
 		}
+
+		_, err = tx.Exec(`
+			INSERT INTO ots_groups (group_id, confirmed)
+			VALUES ($1, FALSE)
+		`, groupID)
+		if err != nil {
+			tx.Rollback()
+			log.Println("Error inserting into ots_groups:", err)
+			http.Error(w, "Failed to initialize OTS group confirmation", http.StatusInternalServerError)
+			return
+		}
 	}
+
 
 	// Insert the admin into the group_participants table
 	_, err = tx.Exec(
@@ -356,7 +369,7 @@ func JoinGroup(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
+// (redundant)
 func GetTransactionHistory(w http.ResponseWriter, r *http.Request) {
     // Parse request body
     username, ok := middleware.GetUsernameFromContext(r)

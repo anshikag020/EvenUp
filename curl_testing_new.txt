@@ -57,7 +57,7 @@ curl -X POST http://localhost:8080/api/add_expense \
 
 5. Get expenses of a group
 
-export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDU5NjkxNzIsInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.m4YV_CAJqt0CyBZ11JSqvwnmzymgSnC3AillFhG66Xg"
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDYxMTI3NjksInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.WoOBuyZ1gh7TjNrjwOKWbQHHZcTO4HRtCXt4OrUcKEg"
 export GROUP_ID="9d25979b-42c5-4cbb-8bd5-897c4cb2076a"
 
 curl -X POST http://localhost:8080/api/get_expenses \
@@ -139,3 +139,23 @@ curl -X PUT http://localhost:8080/api/in_transit_reject \
         "transaction_id": "YOUR_TRANSACTION_ID_HERE"
       }'
 
+12. confirm OTS
+
+curl -X POST http://localhost:8080/api/ots/confirm \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDYxMTI3NjksInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.WoOBuyZ1gh7TjNrjwOKWbQHHZcTO4HRtCXt4OrUcKEg" \
+  -d '{"group_id": "0e348f2b-b77a-4058-a388-43abaa6c1c62"}'
+
+13. Create group
+curl -X POST http://localhost:8080/api/create_group \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDYxMTI3NjksInVzZXJuYW1lIjoiYWxpY2UxMjMifQ.WoOBuyZ1gh7TjNrjwOKWbQHHZcTO4HRtCXt4OrUcKEg" \
+  -d '{
+    "group_name": "Trip to Goa",
+    "group_description": "Beach trip with friends",
+    "group_type": "OTS Group"
+  }'
+
+14. Get transaction History
+curl -X GET http://localhost:8080/api/transactions/completed \
+  -H "Authorization: Bearer <your-auth-token>"
