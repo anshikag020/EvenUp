@@ -1,5 +1,6 @@
 // import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
+import 'package:my_new_app/models/analysis_model.dart';
 import 'package:my_new_app/models/dashboard_section_models.dart';
 
 abstract class CreateGroupService {
@@ -17,4 +18,11 @@ abstract class JoinGroupService {
 abstract class ResetPasswordFlowService {
   Future<bool> resetPassword(String oldPassword, String newPassword);
 }
- 
+
+abstract class AnalysisService {
+  Future<AnalysisData> fetchAnalysis({
+    required List<String> groupIds,
+    required List<String> categories,
+    required String timeRange,
+  });
+}

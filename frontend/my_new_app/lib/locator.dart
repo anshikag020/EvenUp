@@ -1,7 +1,7 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:my_new_app/services/api_services/api_dashboard_section_service.dart';
 import 'package:my_new_app/services/api_services/api_expenses_service.dart';
+import 'package:my_new_app/services/api_services/api_friends_section.dart';
 import 'package:my_new_app/services/api_services/api_groups_section_service.dart';
 import 'package:my_new_app/services/api_services/api_login_section.dart';
 import 'package:my_new_app/services/api_services/api_pinged_section_service.dart';
@@ -11,6 +11,7 @@ import 'package:my_new_app/services/mock_services/mock_pinged_section_service.da
 import 'package:my_new_app/services/mock_services/mock_transactions_history_service.dart';
 import 'package:my_new_app/services/service%20interfaces/dashboard_section_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/expense_service_interface.dart';
+import 'package:my_new_app/services/service%20interfaces/friends_section_api_interface_service.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/login_section_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/pinged_section_service_interface.dart';
@@ -86,4 +87,13 @@ void setupLocator({bool useMock = true}) {
   locator.registerLazySingleton<ResetPasswordFlowService>(
   () => ResetPasswordFlowImpl('http://localhost:8080'),
   );
+
+  locator.registerLazySingleton<FriendsService>(
+  () => ApiFriendsService( baseUrl: 'http://localhost:8080'),
+  );
+
+  locator.registerLazySingleton<AnalysisService>(
+  () => ApiAnalysisService( baseUrl: 'http://localhost:8080'),
+  );
+
 }

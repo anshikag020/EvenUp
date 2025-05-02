@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:my_new_app/models/analysis_model.dart';
 import 'package:my_new_app/models/dashboard_section_models.dart';
 import 'package:my_new_app/services/service%20interfaces/dashboard_section_service_interface.dart';
 import 'package:my_new_app/utils/general_utils.dart';
@@ -178,6 +179,44 @@ class ResetPasswordFlowImpl implements ResetPasswordFlowService {
       }
     } else {
       throw Exception("Empty or invalid response from server");
+    }
+  }
+}
+
+
+
+class ApiAnalysisService implements AnalysisService {
+  final String baseUrl;
+
+  ApiAnalysisService({required this.baseUrl});
+
+  @override
+  Future<AnalysisData> fetchAnalysis({
+    required List<String> groupIds,
+    required List<String> categories,
+    required String timeRange,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/get_analysis'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        "group_ids": groupIds,
+        "categories": categories,
+        "time_range": timeRange,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return AnalysisData.fromJson(data);
+    } else {
+      throw Exception('Failed to load analysis');
     }
   }
 }

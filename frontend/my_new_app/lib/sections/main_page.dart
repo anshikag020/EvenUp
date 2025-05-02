@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_new_app/sections/dashboard_section.dart';
+import 'package:my_new_app/sections/friends_section.dart';
 import 'package:my_new_app/sections/groups_section.dart';
 import 'package:my_new_app/sections/pinged_section.dart';
 import 'package:my_new_app/theme/app_colors.dart';
@@ -26,7 +27,7 @@ class _MainPageState extends State<MainPage> {
     DashboardScreen(),
     GroupsScreen(),
     PingedScreen(),
-    // FriendsScreen(),
+    FriendsScreen(),
   ];
 
   void _onItemTapped(int index) {

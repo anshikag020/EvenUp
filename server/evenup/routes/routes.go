@@ -57,7 +57,7 @@ func RegisterRoutes(router *mux.Router) {
 	router.Handle(
 		"/api/get_analysis",
 		middleware.AuthMiddleware(http.HandlerFunc(handlers.GetAnalysis)),
-	).Methods("GET")
+	).Methods("POST")
 
 		// redundant
 	// router.Handle(
