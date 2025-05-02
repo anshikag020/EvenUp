@@ -395,9 +395,10 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		for u := range involved {
 			usernames = append(usernames, u)
 		}
+		expenseTime := time.Now().Format("02 Jan 2006 15:04")
 	
 		query := `
-			SELECT username, email FROM users
+			SELECT username, name, email FROM users
 			WHERE username = ANY($1)
 		`
 		rows, err := config.DB.Query(query, pq.Array(usernames))
@@ -410,8 +411,8 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		subject := fmt.Sprintf("New Expense in Group %s", req.GroupID)
 	
 		for rows.Next() {
-			var uname, email string
-			if err := rows.Scan(&uname, &email); err != nil {
+			var uname, fullName, email string
+			if err := rows.Scan(&uname, &fullName, &email); err != nil {
 				log.Println("scan email row:", err)
 				continue
 			}
@@ -419,18 +420,32 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 			contributed := req.PaidBy[uname]
 			owed := req.SplitBetween[uname]
 	
-			// Build personalized body
-			body := fmt.Sprintf("Hi %s,\n\n%s added a new expense: \"%s\" of ₹%.2f in group %s.\n",
-				uname, username, req.Description, req.Amount, req.GroupID)
-	
-			if contributed > 0 {
-				body += fmt.Sprintf("You contributed: ₹%.2f\n", contributed)
-			}
-			if owed > 0 {
-				body += fmt.Sprintf("You owe: ₹%.2f\n", owed)
-			}
-	
-			body += "\nCheck the app for full details.\n\nThanks,\nEvenup"
+			body := fmt.Sprintf(
+				`Hi %s,
+				
+				%s just added a new expense in group %s.
+				
+				Description  : %s
+				Total amount : ₹%.2f
+				Date & time  : %s
+				
+				Your share
+				───────────
+				Contributed  : ₹%.2f
+				Owe          : ₹%.2f
+				
+				Open Evenup to view full details.
+				
+				Thanks,
+				Evenup Team`,
+						fullName,
+						username, req.GroupID,
+						req.Description,
+						req.Amount,
+						expenseTime,
+						contributed,
+						owed,
+					)
 	
 			// Send the email
 			if mailErr := services.SendMail([]string{email}, subject, body); mailErr != nil {

@@ -324,6 +324,28 @@ func InTransitRejectHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
+	// -------- 6.5  Gather info for email BEFORE committing -------------
+	var senderName, senderEmail, receiverName, groupName string
+
+	// sender (the one who will receive the notice)
+	if err := tx.QueryRow(`
+			SELECT name, email
+			FROM   users
+			WHERE  username = $1
+	`, sender).Scan(&senderName, &senderEmail); err != nil {
+		log.Println("mail-fetch sender:", err)
+		// don’t abort – just skip email later
+	}
+
+	// receiver name (for a friendly sentence)
+	_ = tx.QueryRow(`
+			SELECT name FROM users WHERE username = $1
+	`, receiver).Scan(&receiverName)
+
+	// group name
+	_ = tx.QueryRow(`
+			SELECT group_name FROM groups WHERE group_id = $1
+	`, groupID).Scan(&groupName)
 
 	// Step 7: Commit
 	if err := tx.Commit(); err != nil {
@@ -331,6 +353,22 @@ func InTransitRejectHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
+
+	// ------------------ 8)  Email in background -------------------------
+	go func() {
+		if senderEmail == "" { // nothing to notify
+			return
+		}
+		subject := "Settlement rejected"
+		body := fmt.Sprintf(
+			"Hi %s,\n\n%s has rejected the settlement of ₹%.2f in the group “%s”.\n"+
+				"The balance has been restored.\n\nThanks,\nEvenup",
+			senderName, receiverName, amount, groupName)
+
+		if err := services.SendMail([]string{senderEmail}, subject, body); err != nil {
+			log.Println("email-send failed:", err)
+		}
+	}()
 
 	// Step 8: Success response
 	json.NewEncoder(w).Encode(map[string]interface{}{

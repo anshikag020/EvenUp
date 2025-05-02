@@ -121,7 +121,8 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
         return
     }
     defer rows.Close()
-
+    var totalAmount float64
+    var senderName, receiverName, receiverEmail string
     for rows.Next() {
         var gid string
         var amt float64
@@ -135,6 +136,7 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
             VALUES
                 (gen_random_uuid(), $1, $2, $3, $4)
         `, gid, me, req.FriendName, amt)
+        totalAmount += amt
     }
 
     // then delete the settled balances
@@ -143,10 +145,38 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
         WHERE sender = $1 AND receiver = $2
     `, me, req.FriendName)
 
+    
+    // look up names + email
+    _ = tx.QueryRow(`SELECT name FROM users WHERE username=$1`, me).
+            Scan(&senderName)
+    _ = tx.QueryRow(`SELECT name, email FROM users WHERE username=$1`, req.FriendName).
+            Scan(&receiverName, &receiverEmail)
+
     if err := tx.Commit(); err != nil {
         http.Error(w, "Server error", http.StatusInternalServerError)
         return
     }
+
+    go func() {
+        if receiverEmail == "" { return }
+    
+        subject := "Settlement initiated"
+        body := fmt.Sprintf(
+    `Hi %s,
+    
+    %s has initiated a settlement with you on Evenup.
+    Total amount of money: ₹%.2f.
+    
+    Please open the app to review and confirm.
+    
+    Thanks,
+    Evenup Team`,
+            receiverName, senderName, totalAmount)
+    
+        if err := services.SendMail([]string{receiverEmail}, subject, body); err != nil {
+            log.Println("mail send failed:", err)
+        }
+    }()
 
     json.NewEncoder(w).Encode(map[string]interface{}{
         "status":  true,

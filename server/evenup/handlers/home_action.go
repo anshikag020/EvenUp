@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"github.com/google/uuid"
+	"github.com/anshikag020/EvenUp/server/evenup/services"
 )
 
 func GetUserDetails (w http.ResponseWriter, r *http.Request) {
@@ -250,6 +251,40 @@ func CreatePrivateSplit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
+	/* ---------- notify the second participant --------------------------- */
+	go func() {
+		// 1) fetch names + email
+		var (
+			creatorName   string
+			otherName     string
+			otherEmail    string
+		)
+		if err := config.DB.QueryRow(`
+				SELECT name FROM users WHERE username = $1
+		`, username).Scan(&creatorName); err != nil {
+			log.Println("mail: fetch creator name:", err)
+			return
+		}
+		if err := config.DB.QueryRow(`
+				SELECT name, email FROM users WHERE username = $1
+		`, req.Username2).Scan(&otherName, &otherEmail); err != nil {
+			log.Println("mail: fetch other user:", err)
+			return
+		}
+
+		// 2) build & send message
+		subject := "New Private-Split created"
+		body := fmt.Sprintf(
+			"Hi %s,\n\n%s has created a new Private-Split with you on Evenup.\n"+
+				"You can start adding expenses in the group “%s”.\n\nThanks,\nEvenup Team",
+			otherName, creatorName, fmt.Sprintf("%s-%s", username, req.Username2),
+		)
+
+		if err := services.SendMail([]string{otherEmail}, subject, body); err != nil {
+			log.Println("mail: send failed:", err)
+		}
+	}()
+
 
 	// Send success response
 	w.Header().Set("Content-Type", "application/json")

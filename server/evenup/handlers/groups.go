@@ -10,6 +10,8 @@ import (
 	"github.com/anshikag020/EvenUp/server/evenup/config"
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"github.com/google/uuid"
+	"strings"
+	"github.com/anshikag020/EvenUp/server/evenup/services"
 )
 
 func GetGroups(w http.ResponseWriter, r *http.Request) {
@@ -548,11 +550,58 @@ func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// ───────── gather details for e-mail BEFORE committing ─────────
+	var (
+		groupName          string
+		newAdminName       string
+		newAdminEmail      string
+		previousAdminName  string
+	)
+
+	// group name
+	_ = tx.QueryRow(`
+			SELECT group_name FROM groups WHERE group_id = $1
+	`, groupID).Scan(&groupName)
+
+	// new admin’s name + email
+	_ = tx.QueryRow(`
+			SELECT name, email FROM users WHERE username = $1
+	`, newAdmin).Scan(&newAdminName, &newAdminEmail)
+
+	// old admin’s name (the one making the request)
+	_ = tx.QueryRow(`
+			SELECT name FROM users WHERE username = $1
+	`, username).Scan(&previousAdminName)
 
 	if err := tx.Commit(); err != nil {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		return
+	}
+	
+	// ───────── send notification asynchronously ─────────
+	go func() {
+		if newAdminEmail == "" { return } // safety
+	
+		subject := "You are now the admin of “" + groupName + "”"
+		body := fmt.Sprintf(
+	`Hi %s,
+	
+	%s has transferred admin rights to you for the group “%s”.
+	
+	You can now manage members and settings for this group in Evenup.
+	
+	Thanks,
+	Evenup Team`, newAdminName, previousAdminName, groupName)
+	
+		if err := services.SendMail([]string{newAdminEmail}, subject, body); err != nil {
+			log.Println("mail-notify admin change:", err)
+		}
+	}()
+	
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  status,
@@ -658,6 +707,56 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ─────────  Summary BEFORE destructive deletes ─────────
+	var groupName string
+	if err := tx.QueryRow(`SELECT group_name FROM groups WHERE group_id=$1`, groupUUID).
+		Scan(&groupName); err != nil {
+		http.Error(w, "Failed to fetch group name", http.StatusInternalServerError)
+		return
+	}
+
+	// grand total for the group
+	var grandTotal float64
+	_ = tx.QueryRow(`SELECT COALESCE(SUM(amount),0) FROM expenses WHERE group_id=$1`,
+		groupUUID).Scan(&grandTotal)
+
+	// per-user totals
+	perUser := map[string]float64{}
+	rows, err := tx.Query(`
+		SELECT bs.username, SUM(bs.amount_owed)
+		FROM bill_split bs
+		JOIN expenses e ON e.expense_id = bs.expense_id
+		WHERE e.group_id = $1
+		GROUP BY bs.username
+	`, groupUUID)
+	if err == nil {
+		for rows.Next() {
+			var u string; var amt float64
+			_ = rows.Scan(&u, &amt)
+			perUser[u] = amt
+		}
+		rows.Close()
+	}
+
+	// member names & emails
+	type member struct{ name, email string }
+	members := map[string]member{}
+	rows, err = tx.Query(`
+		SELECT u.username, u.name, u.email
+		FROM users u
+		JOIN group_participants gp ON gp.participant = u.username
+		WHERE gp.group_id = $1
+	`, groupUUID)
+	if err == nil {
+		for rows.Next() {
+			var uname, nm, mail string
+			_ = rows.Scan(&uname, &nm, &mail)
+			members[uname] = member{nm, mail}
+		}
+		rows.Close()
+	}
+
+
 	// Delete participants
 	if _, err := tx.Exec(`DELETE FROM group_participants WHERE group_id = $1`, groupUUID); err != nil {
 		http.Error(w, "Failed to remove participants", http.StatusInternalServerError)
@@ -675,6 +774,39 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
+	// ─────────  Send summary e-mails asynchronously ─────────
+	go func() {
+		if len(members) == 0 { return }
+
+		// craft a per-user line list once
+		var perUserLines []string
+		for u, amt := range perUser {
+			perUserLines = append(perUserLines,
+				fmt.Sprintf("%s : ₹%.2f", members[u].name, amt))
+		}
+		perUserBlock := strings.Join(perUserLines, "\n")
+
+		subject := fmt.Sprintf("Summary for deleted group “%s”", groupName)
+
+		for uname, m := range members {
+			body := fmt.Sprintf(
+	`Hi %s,
+
+	The group “%s” has been deleted.
+
+	Total amount spent: ₹%.2f
+
+	Breakdown by member:
+	%s
+
+	Thanks for using Evenup.`, m.name, groupName, grandTotal, perUserBlock)
+
+			if err := services.SendMail([]string{m.email}, subject, body); err != nil {
+				log.Printf("email to %s failed: %v\n", uname, err)
+			}
+		}
+	}()
+
 
 	// Success response
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -811,12 +943,65 @@ func ConfirmOtsParticipationHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	var groupName string
+	var members []struct{ name, email string }
+
+	if allConfirmed {
+		// fetch group name
+		_ = tx.QueryRow(`SELECT group_name FROM groups WHERE group_id=$1`,
+			req.GroupID).Scan(&groupName)
+
+		// fetch every participant’s name + e-mail
+		rows, err2 := tx.Query(`
+			SELECT u.name, u.email
+			FROM users u
+			JOIN group_participants gp ON gp.participant = u.username
+			WHERE gp.group_id = $1
+		`, req.GroupID)
+		if err2 == nil {
+			for rows.Next() {
+				var n, e string
+				_ = rows.Scan(&n, &e)
+				members = append(members, struct{ name, email string }{n, e})
+			}
+			rows.Close()
+		}
+	}
+
 
 	if err := tx.Commit(); err != nil {
 		log.Println("tx commit:", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+	if err := tx.Commit(); err != nil {
+		log.Println("tx commit:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	
+	// ───── email everyone only if allConfirmed was true ─────
+	if allConfirmed && len(members) > 0 {
+		go func() {
+			subject := fmt.Sprintf("All members confirmed in “%s”", groupName)
+			for _, m := range members {
+				body := fmt.Sprintf(
+	`Hi %s,
+	
+	Everyone in the OTS group “%s” has now confirmed their expenses.
+	
+	You can proceed to settle balances whenever you’re ready.
+	
+	Thanks,
+	Evenup Team`, m.name, groupName)
+	
+				if err := services.SendMail([]string{m.email}, subject, body); err != nil {
+					log.Println("email send failed to", m.email, ":", err)
+				}
+			}
+		}()
+	}
+	
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
