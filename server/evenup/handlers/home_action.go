@@ -553,6 +553,21 @@ func GetAnalysis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+    if len(req.GroupIDs) == 0 {
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": "No groups selected",
+        })
+        return
+    }
+    if len(req.Categories) == 0 {
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": "No categories selected",
+        })
+        return
+    }
+	  
 	// -------- 2) build dynamic WHERE ------------------------------------
 	var whereParts []string
 	var args []interface{}
@@ -623,6 +638,13 @@ func GetAnalysis(w http.ResponseWriter, r *http.Request) {
 	if err := rows.Err(); err != nil {
 		log.Println("row err:", err)
 	}
+
+	// for _, c := range req.Categories {
+    //     key := strings.ToLower(c)
+    //     if _, exists := perCategory[key]; !exists {
+    //         perCategory[key] = 0
+    //     }
+    // }
 
 	// -------- 4) respond -----------------------------------------------
 	json.NewEncoder(w).Encode(analysisResponse{
