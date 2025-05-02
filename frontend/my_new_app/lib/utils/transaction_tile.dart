@@ -5,7 +5,7 @@ import 'package:my_new_app/theme/app_colors.dart';
 class FancyTransactionTile extends StatelessWidget {
   final String groupName;
   final String name;
-  final int amount;
+  final double amount;
   final bool type; 
   final String timestamp; 
 

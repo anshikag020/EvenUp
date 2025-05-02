@@ -4,7 +4,7 @@ import 'package:my_new_app/theme/app_colors.dart';
 
 class ExpenseTile extends StatelessWidget {
   final String description;
-  final String amount;
+  final double amount;
   final VoidCallback onTap;
 
   const ExpenseTile({

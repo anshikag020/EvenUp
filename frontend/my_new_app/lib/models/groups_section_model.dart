@@ -52,7 +52,7 @@ class GroupMemberModel {
 class ExpenseModel {
   final String expenseID; 
   final String description;
-  final int amount;
+  final double amount;
 
   ExpenseModel({
     required this.expenseID, 
@@ -64,7 +64,7 @@ class ExpenseModel {
     return ExpenseModel(
       expenseID: json['expense_id'],
       description: json['description'],
-      amount: json['amount'],
+      amount: json['amount'].toDouble(),
     );
   }
 
@@ -148,7 +148,7 @@ class Balance {
     return Balance(
       user1: json['sender'],
       user2: json['receiver'],
-      amount: json['amount'],
+      amount: json['amount'].toDouble(),
     );
   }
 

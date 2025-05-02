@@ -36,7 +36,7 @@ class PingedSectionModel {
   final String groupName;
   final String otherMember;
   final bool isSender; 
-  final int amount;
+  final double amount;
 
   PingedSectionModel({
     required this.transacID,
@@ -52,7 +52,7 @@ class PingedSectionModel {
       groupName: json['group_name'] ?? 'unkown',
       otherMember: json['other_member'] ?? '',
       isSender: json['is_sender'] ?? 'false',
-      amount: json['amount'] ?? 0,
+      amount: json['amount'].toDouble() ?? 0.0,
     );
   }
 

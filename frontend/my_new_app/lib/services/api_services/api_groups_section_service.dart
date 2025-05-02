@@ -245,6 +245,7 @@ class ApiBalanceService implements BalanceService {
     if (response.statusCode == 200) {
       final Map<String, dynamic> json = jsonDecode(response.body);
       final List<dynamic> balances = json['balances'] ?? [];
+      // print(balances); 
       // print( balances );
       return balances.map((e) => Balance.fromJson(e)).toList();
 

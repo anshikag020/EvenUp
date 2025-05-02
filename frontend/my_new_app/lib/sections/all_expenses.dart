@@ -171,7 +171,7 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                           final item = filteredExpenses[index];
                           return ExpenseTile(
                             description: item.description,
-                            amount: item.amount.toString(),
+                            amount: item.amount,
                             onTap: () {
                               showDialog(
                                 context: context,

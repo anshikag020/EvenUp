@@ -501,7 +501,7 @@ void initState() {
   }
 
   if (splitType == 'Evenly' || splitType == 'Unevenly') {
-    if ((total - widget.totalAmount).abs() >= 0.01) {
+    if ((total - widget.totalAmount).abs() >= 0.09) {
       _showError('The split total does not match the expense amount.');
       return;
     }

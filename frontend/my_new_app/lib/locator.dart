@@ -17,83 +17,83 @@ import 'package:my_new_app/services/service%20interfaces/login_section_service_i
 import 'package:my_new_app/services/service%20interfaces/pinged_section_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/transaction_history_service_interface.dart';
 final locator = GetIt.instance;
-
+final String backendUrl = 'http://localhost:8080'; 
 
 void setupLocator({bool useMock = true}) {
   locator.registerLazySingleton<TransactionService>(() =>
-      useMock ? MockTransactionService() : ApiTransactionService(baseUrl: 'http://localhost:8080'));
+      useMock ? MockTransactionService() : ApiTransactionService(baseUrl: backendUrl));
 
   locator.registerLazySingleton<GroupService>(() =>
-      useMock ? MockGroupService() : ApiGroupService(baseUrl: 'http://localhost:8080'));
+      useMock ? MockGroupService() : ApiGroupService(baseUrl: backendUrl));
   
   locator.registerLazySingleton<GroupMemberService>(() =>
-      useMock ? MockGroupMemberService() : ApiGroupMemberService(baseUrl: 'http://localhost:8080'));
+      useMock ? MockGroupMemberService() : ApiGroupMemberService(baseUrl: backendUrl));
 
   locator.registerLazySingleton<ExpenseService>(
-    () => useMock ? MockExpenseService() : ApiExpenseService(baseUrl: 'http://localhost:8080'),
+    () => useMock ? MockExpenseService() : ApiExpenseService(baseUrl: backendUrl),
   );
 
   locator.registerLazySingleton<DetailedExpenseService>(
-    () => useMock ? MockDetailedExpenseService() : ApiDetailedExpenseService(baseUrl: 'http://localhost:8080'),
+    () => useMock ? MockDetailedExpenseService() : ApiDetailedExpenseService(baseUrl: backendUrl),
   );
 
   locator.registerLazySingleton<BalanceService>(
     () => useMock
         ? MockBalanceService()
-        : ApiBalanceService(baseUrl: 'http://localhost:8080'),
+        : ApiBalanceService(baseUrl: backendUrl),
   );
 
   locator.registerLazySingleton<PingedSectionService>(() =>
-      useMock ? MockPingedSectionService() : PingedSectionServiceImpl(baseUrl: 'http://localhost:8080'));
+      useMock ? MockPingedSectionService() : PingedSectionServiceImpl(baseUrl: backendUrl));
 
 
 
   locator.registerLazySingleton<AuthService>(
-  () => ApiAuthService(baseUrl: 'http://localhost:8080'),
+  () => ApiAuthService(baseUrl: backendUrl),
   );
 
   locator.registerLazySingleton<CreateGroupService>(
-  () => CreateGroupServiceImpl('http://localhost:8080'),
+  () => CreateGroupServiceImpl(backendUrl),
   );
   
   locator.registerLazySingleton<CreatePrivateSplitService>(
-  () => CreatePrivateSplitServiceImpl('http://localhost:8080'),
+  () => CreatePrivateSplitServiceImpl(backendUrl),
   );
 
   locator.registerLazySingleton<JoinGroupService>(
-  () => JoinGroupImpl('http://localhost:8080'),
+  () => JoinGroupImpl(backendUrl),
   );
 
   locator.registerLazySingleton<AddExpenseService>(
-  () => AddExpenseServiceImpl('http://localhost:8080'),
+  () => AddExpenseServiceImpl(backendUrl),
   );
   
   locator.registerLazySingleton<SettleService>(
-  () => BalanceSettleServiceImpl('http://localhost:8080'),
+  () => BalanceSettleServiceImpl(backendUrl),
   );
 
   locator.registerLazySingleton<HandlePingedSectionService>(
-  () => HandlePingedSectionImpl(baseUrl: 'http://localhost:8080'),
+  () => HandlePingedSectionImpl(baseUrl: backendUrl),
   );
 
   locator.registerLazySingleton<GroupUserPanelService>(
-  () => GroupUserPanelImpl(baseUrl: 'http://localhost:8080'),
+  () => GroupUserPanelImpl(baseUrl: backendUrl),
   );
 
   locator.registerLazySingleton<ConfirmOTS>(
-  () => ConfirmOTSImpl(baseUrl: 'http://localhost:8080'),
+  () => ConfirmOTSImpl(baseUrl: backendUrl),
   );
 
   locator.registerLazySingleton<ResetPasswordFlowService>(
-  () => ResetPasswordFlowImpl('http://localhost:8080'),
+  () => ResetPasswordFlowImpl(backendUrl),
   );
 
   locator.registerLazySingleton<FriendsService>(
-  () => ApiFriendsService( baseUrl: 'http://localhost:8080'),
+  () => ApiFriendsService( baseUrl: backendUrl),
   );
 
   locator.registerLazySingleton<AnalysisService>(
-  () => ApiAnalysisService( baseUrl: 'http://localhost:8080'),
+  () => ApiAnalysisService( baseUrl: backendUrl),
   );
 
 }

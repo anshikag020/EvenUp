@@ -2,7 +2,7 @@ class TransactionModel {
   final String transactionId;
   final String groupName; 
   final String name;
-  final int amount;
+  final double amount;
   final bool type; 
   final String timestamp; 
 
@@ -20,7 +20,7 @@ class TransactionModel {
       transactionId: json['transaction_id'] ?? 'unkown',
       groupName: json['group_name'] ?? 'unkown' ,
       name: json['other_user'] ?? '',
-      amount: json['amount'] ?? 0,
+      amount: json['amount'].toDouble() ?? 0.0,
       type: json['is_sender'] ?? true, 
       timestamp: json['timestamp'] ?? 'unknown', 
     );

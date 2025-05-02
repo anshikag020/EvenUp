@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/sections/login_page.dart';
 import 'package:my_new_app/sections/reset_password_dashboard_page.dart';
-import 'package:my_new_app/services/api_services/api_login_section.dart';
+import 'package:my_new_app/services/service%20interfaces/login_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/general_utils.dart';
@@ -170,9 +171,13 @@ class _UserDrawerPanelState extends State<UserDrawerPanel> {
                                   message: 'Are you sure you want to logout?',
                                   onConfirm: () async {
                                     // handle logic here
-                                    await ApiAuthService(
-                                      baseUrl: "http://127.0.0.1:8080/api",
-                                    ).logout();
+                                    
+                                    final AuthService service = locator<AuthService>(); 
+                                    await service.logout(); 
+
+                                    // await ApiAuthService(
+                                    //   baseUrl: "http://127.0.0.1:8080/api",
+                                    // ).logout();
                                     // Navigator.pushReplacementNamed(context, '/login');
 
                                     Navigator.pushReplacement(

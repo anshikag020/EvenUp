@@ -6,7 +6,7 @@ import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 class PingCard extends StatelessWidget {
   final String transacID;
   final String otherMember;
-  final int amount;
+  final double amount;
   final String groupName;
   final bool isSender;
   final VoidCallback onAccept;
