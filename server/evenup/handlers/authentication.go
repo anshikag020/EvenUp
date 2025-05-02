@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"github.com/anshikag020/EvenUp/server/evenup/services"
 	"crypto/rand"
+	"database/sql"
 )
 
 func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +159,6 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// TODO: make sure email is verified, will do it later
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	
@@ -184,34 +184,56 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Check if user exists by username
-	var storedPassword string
-	err = tx.QueryRow("SELECT password FROM users WHERE username=$1", req.Username).Scan(&storedPassword)
-	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
-			// User not found
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"status":  false,
-				"message": "Invalid username",
-			})
-			return
-		}
-		log.Println("Error querying the database:", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
+	// Fetch both the hashed password and email_verified flag
+    var (
+        storedPassword string
+        emailVerified  bool
+    )
+    err = tx.
+        QueryRow(
+            `SELECT password, email_verified
+               FROM users
+              WHERE username = $1`, req.Username,
+        ).
+        Scan(&storedPassword, &emailVerified)
 
-	// Compare the password
-	err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(req.Password))
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":  false,
-			"message": "Invalid password",
-		})
-		return
-	}
+    if err != nil {
+        if err == sql.ErrNoRows {
+            // User not found
+            w.Header().Set("Content-Type", "application/json")
+            json.NewEncoder(w).Encode(map[string]interface{}{
+                "status":  false,
+                "message": "Invalid username",
+            })
+            return
+        }
+        log.Println("Error querying the database:", err)
+        http.Error(w, "Internal server error", http.StatusInternalServerError)
+        return
+    }
+
+    // --- NEW: block login if email not verified ---
+    if !emailVerified {
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": "Email not verified",
+        })
+        return
+    }
+
+    // Compare the password
+    if err := bcrypt.CompareHashAndPassword(
+        []byte(storedPassword),
+        []byte(req.Password),
+    ); err != nil {
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": "Invalid password",
+        })
+        return
+    }
 
 	// ---------------- JWT ----------------
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -461,8 +483,13 @@ func ForgotPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	otp, _ := randomDigits(6)
-	services.SetTemp(otpKey(req.Email), otp, 15*time.Minute) // auto-expire
-
+	// **Capture and log the SetTemp error**
+    if err := services.SetTemp(otpKey(req.Email), otp, 15*time.Minute); err != nil {
+        log.Printf("error storing OTP in Redis for %s: %v", req.Email, err)
+        // Now you’ll see in your logs if Redis is mis-configured or down.
+        http.Error(w, "Server error", http.StatusInternalServerError)
+        return
+    }
 	// send email
 	subject := "Your Evenup OTP"
 	body := fmt.Sprintf("Your OTP is %s. It’s valid for 15 minutes.", otp)

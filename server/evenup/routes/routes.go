@@ -176,8 +176,7 @@ router.Handle("/api/get_transaction_history", middleware.AuthMiddleware(http.Han
 // )
 
 // LINK handling
-
-router.Handle("/api/verify_email", middleware.AuthMiddleware(http.HandlerFunc(handlers.VerifyEmailHandler)),).Methods("GET")
+router.HandleFunc("/api/verify_email", handlers.VerifyEmailHandler).Methods("GET")
 router.Handle("/api/get_friends_page_records", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetFriendsPageRecords)),).Methods("GET")
 router.Handle("/api/settle_up_friends_page", middleware.AuthMiddleware(http.HandlerFunc(handlers.SettleUpFriendsPage)),).Methods("PUT")
 router.Handle("/api/remind_friends_page", middleware.AuthMiddleware(http.HandlerFunc(handlers.RemindFriendsPage)),).Methods("PUT")
