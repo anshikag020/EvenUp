@@ -136,7 +136,7 @@ class Balance {
 
   final String user1;
   final String user2;
-  final int amount;
+  final double amount;
 
   Balance({
     required this.user1,
