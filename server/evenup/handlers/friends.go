@@ -12,7 +12,6 @@ import (
 	"github.com/anshikag020/EvenUp/server/evenup/services"
 	// "github.com/google/uuid"
     // "github.com/lib/pq"
-     "github.com/shopspring/decimal"
 	"github.com/anshikag020/EvenUp/ws_server/pubsub"
 )
 
@@ -122,19 +121,18 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	/* ─── 4. Move + sum in one CTE ────────────────────────────── */
-	var total decimal.Decimal
-	err = tx.QueryRow(`
-		WITH moved AS (
-			DELETE FROM balances
-			WHERE sender = $1 AND receiver = $2
-			RETURNING group_id, sender, receiver, amount
-		)
-		INSERT INTO intermediate_transactions
-		    (group_id, sender, receiver, amount)
-		SELECT  group_id, sender, receiver, amount
-		FROM moved
-		RETURNING COALESCE(SUM(amount), 0)
-	`, me, req.FriendName).Scan(&total)
+	_, err = tx.Exec(`
+	WITH moved AS (
+		DELETE FROM balances
+		WHERE (sender = $1 AND receiver = $2)
+		   OR (sender = $2 AND receiver = $1)
+		RETURNING group_id, sender, receiver, amount
+	)
+	INSERT INTO intermediate_transactions (group_id, sender, receiver, amount)
+	SELECT  group_id, sender, receiver, amount
+	FROM    moved;
+`, me, req.FriendName)
+
 	if err != nil {
         // Log the full error for debugging
         log.Printf(
@@ -145,24 +143,21 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
         http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
         return
     }
-    if total.IsZero() {
-        http.Error(w, "No outstanding balance with that user", http.StatusConflict)
-        return
-    }
+    
 
 	// /* ─── 5. Look up names / email ───────────────────────────── */
-	// var senderName, receiverName, receiverEmail string
-	// if err := tx.QueryRow(`SELECT name FROM users WHERE username = $1`, me).
-	// 	Scan(&senderName); err != nil {
-	// 	http.Error(w, "DB error", http.StatusInternalServerError)
-	// 	return
-	// }
-	// if err := tx.QueryRow(`
-	// 	SELECT name, email FROM users WHERE username = $1`, req.FriendName).
-	// 	Scan(&receiverName, &receiverEmail); err != nil {
-	// 	http.Error(w, "DB error", http.StatusInternalServerError)
-	// 	return
-	// }
+	var senderName, receiverName, receiverEmail string
+	if err := tx.QueryRow(`SELECT name FROM users WHERE username = $1`, me).
+		Scan(&senderName); err != nil {
+		http.Error(w, "DB error", http.StatusInternalServerError)
+		return
+	}
+	if err := tx.QueryRow(`
+		SELECT name, email FROM users WHERE username = $1`, req.FriendName).
+		Scan(&receiverName, &receiverEmail); err != nil {
+		http.Error(w, "DB error", http.StatusInternalServerError)
+		return
+	}
 
 	/* ─── 6. Commit ──────────────────────────────────────────── */
 	if err := tx.Commit(); err != nil {
@@ -171,26 +166,25 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/* ─── 7. Send email (async) ──────────────────────────────── */
-// 	go func() {
-// 		if receiverEmail == "" {
-// 			return
-// 		}
-// 		subject := "Settlement initiated"
-// 		body := fmt.Sprintf(`Hi %s,
+	go func() {
+		if receiverEmail == "" {
+			return
+		}
+		subject := "Settlement initiated"
+		body := fmt.Sprintf(`Hi %s,
 
-// %s has initiated a settlement with you on Evenup.
-// Total amount of money: ₹%s.
+%s has initiated a settlement with you on Evenup.
 
-// Please open the app to review and confirm.
+Please open the app to review and confirm.
 
-// Thanks,
-// Evenup Team`,
-// 			receiverName, senderName, total.StringFixed(2))
+Thanks,
+Evenup Team`,
+			receiverName, senderName)
 
-// 		if err := services.SendMail([]string{receiverEmail}, subject, body); err != nil {
-// 			log.Println("mail send failed:", err)
-// 		}
-// 	}()
+		if err := services.SendMail([]string{receiverEmail}, subject, body); err != nil {
+			log.Println("mail send failed:", err)
+		}
+	}()
 
 	/* ─── 8. Tell clients to refresh ─────────────────────────── */
 	if WS != nil {
@@ -201,7 +195,6 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":       true,
 		"message":      "Settle up initiated",
-		"total_amount": total.StringFixed(2),
 	})
 }
 
