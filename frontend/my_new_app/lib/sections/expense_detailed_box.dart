@@ -1,19 +1,24 @@
+// import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
+
 import 'package:flutter/material.dart';
 import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
+import 'package:my_new_app/sections/edit_expense.dart';
+import 'package:my_new_app/services/service%20interfaces/expense_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
-import 'package:my_new_app/utils/general_utils.dart';
 
 class ExpenseDetailDialog extends StatelessWidget {
+  final String groupID; 
   final String expenseID;
-  final VoidCallback onDelete;
+  final VoidCallback? onDeleteSuccessCall;
 
   const ExpenseDetailDialog({
     Key? key,
+    required this.groupID, 
     required this.expenseID,
-    required this.onDelete,
+    required this.onDeleteSuccessCall,
   }) : super(key: key);
 
   @override
@@ -79,10 +84,15 @@ class ExpenseDetailDialog extends StatelessWidget {
                           buildText(expense.tag, textLightColor),
                           const SizedBox(height: 16),
                           buildLabel('Paid by:', textDarkColor),
-                          buildList(expense.paidBy, maxListHeight, textLightColor),
+                          // buildList(expense.paidBy, maxListHeight, textLightColor),
+                          // const SizedBox(height: 16),
+                          // buildLabel('Owed by:', textDarkColor),
+                          // buildList(expense.owedBy, maxListHeight, textLightColor),
+                          // const SizedBox(height: 24),
+                          buildMapList(expense.paidBy, maxListHeight, textLightColor),
                           const SizedBox(height: 16),
                           buildLabel('Owed by:', textDarkColor),
-                          buildList(expense.owedBy, maxListHeight, textLightColor),
+                          buildMapList(expense.owedBy, maxListHeight, textLightColor),
                           const SizedBox(height: 24),
                           Text(
                             'Last Updated by: ${expense.lastUpdatedBy}',
@@ -124,15 +134,42 @@ class ExpenseDetailDialog extends StatelessWidget {
                                 context: context,
                                 builder: (context) => ConfirmationDialog(
                                   message: 'Are you sure you want to edit this expense?',
+                                  // onConfirm: () {
+                                  //   // handle logic here 
+
+                                            
+
+
+
+                                  //   Navigator.pop(context);
+                                  //   showCustomSnackBar(
+                                  //     context,
+                                  //     "Expense edited successfully",
+                                  //     backgroundColor: const Color.fromARGB(255, 129, 171, 13)
+                                  //   );
+                                  // },
                                   onConfirm: () {
-                                    // handle logic here 
-                                    Navigator.pop(context);
-                                    showCustomSnackBar(
-                                      context,
-                                      "Expense edited successfully",
-                                      backgroundColor: const Color.fromARGB(255, 129, 171, 13)
-                                    );
-                                  },
+  Navigator.pop(context); // Close confirmation dialog
+
+  // Then open EditExpenseDialog
+  showDialog(
+    context: context,
+    builder: (_) => EditExpenseDialog(
+      groupID: groupID,
+      expenseID: expenseID,
+      initialDescription: expense.description,
+      // initialAmount: 100,
+      initialAmount: double.tryParse(expense.amount) ?? 0.0,
+      initialPaidBy: expense.paidBy,
+      initialSplitBetween: expense.owedBy.keys.toList(),
+      initialSplitDetails: expense.owedBy,
+      initialSplitType: 'custom', // Set properly if you have it in the response
+      initialExpenseType: expense.tag,
+      parentContext: context,
+    ),
+  );
+},
+
                                   onCancel: () => Navigator.pop(context),
                                 ),
                               );
@@ -148,13 +185,23 @@ class ExpenseDetailDialog extends StatelessWidget {
                                 context: context,
                                 builder: (context) => ConfirmationDialog(
                                   message: 'Are you sure you want to delete this expense?',
-                                  onConfirm: () {
-                                    onDelete(); // <-- callback trigger
-                                    showCustomSnackBar(
-                                      context,
-                                      "Expense deleted successfully",
-                                      backgroundColor: const Color.fromARGB(255, 189, 48, 48)
-                                    );
+                                  onConfirm: () async {
+                                    //  handle logic here
+                                    
+                                    final AddExpenseService service = locator<AddExpenseService>(); 
+                                    final success = await service.deleteExpense( context, expenseID);
+                                    
+                                    if( success ){
+                                        Navigator.pop(context);
+                                        // Navigator.pop(context, true);
+
+                                        onDeleteSuccessCall?.call(); 
+                                    }
+                                    // showCustomSnackBar(
+                                    //   context,
+                                    //   "Expense deleted successfully",
+                                    //   backgroundColor: const Color.fromARGB(255, 189, 48, 48)
+                                    // );
                                   },
                                   onCancel: () => Navigator.pop(context),
                                 ),
@@ -195,6 +242,17 @@ class ExpenseDetailDialog extends StatelessWidget {
     );
   }
 
+
+
+
+
+
+
+
+
+
+
+
   Widget buildList(List<String> data, double maxHeight, Color color) {
     return Container(
       constraints: BoxConstraints(
@@ -216,6 +274,49 @@ class ExpenseDetailDialog extends StatelessWidget {
       ),
     );
   }
+
+
+
+  Widget buildMapList(Map<String, double> data, double maxHeight, Color color) {
+  final entries = data.entries.toList();
+  return Container(
+    constraints: BoxConstraints(
+      maxHeight: entries.length > 4 ? maxHeight : double.infinity,
+    ),
+    child: ListView.builder(
+      shrinkWrap: true,
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            children: [
+              Icon(Icons.circle, color: color, size: 10),
+              const SizedBox(width: 8),
+              Text('${entry.key} - ₹${entry.value.toStringAsFixed(2)}', style: TextStyle(color: color)),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   Widget buildActionButton(BuildContext context,
       {required IconData icon,

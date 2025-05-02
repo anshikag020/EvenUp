@@ -1,14 +1,14 @@
 [
-    { "groupName": "Group 1", "name": "Anirudh", "amount": "500", "type": "1" },
-    { "groupName": "Group 2","name": "Yash", "amount": "700", "type": "-1" },
-    { "groupName": "Group 3", "name": "Anshika", "amount": "550", "type": "-1" },
-    { "groupName": "Group 4","name": "Ayush", "amount": "550", "type": "1" },
-    { "groupName": "Group 5", "name": "Hardik", "amount": "550", "type": "1" },
-    { "groupName": "Group 6","name": "Manan", "amount": "550", "type": "1" },
-    { "groupName": "Group 7", "name": "Dhawal", "amount": "550", "type": "-1" },
-    { "groupName": "Group 8", "name": "Samyak", "amount": "550", "type": "1" },
-    { "groupName": "Group 9", "name": "Adish", "amount": "550", "type": "-1" },
-    { "groupName": "Group 10","name": "Anshika", "amount": "550", "type": "1" },
-    { "groupName": "Group 11", "name": "Yash", "amount": "100", "type": "-1" }
+    { "transaction_id": "", "timestamp": "date 5 may" ,  "groupName": "Group 1", "name": "Anirudh", "amount": 500, "type": true},
+    { "transaction_id": "", "timestamp": "date 5 may" ,  "groupName": "Group 2","name": "Yash", "amount": 700, "type": false },
+    { "transaction_id": "", "timestamp": "date 5 may" ,  "groupName": "Group 3", "name": "Anshika", "amount": 550, "type": false },
+    { "transaction_id": "", "timestamp": "date 5 may" ,  "groupName": "Group 4","name": "Ayush", "amount": 550, "type": true},
+    { "transaction_id": "", "timestamp": "date 5 may" ,  "groupName": "Group 5", "name": "Hardik", "amount": 550, "type": true},
+    {  "transaction_id": "", "timestamp": "date 5 may" , "groupName": "Group 6","name": "Manan", "amount": 550, "type": true},
+    {  "transaction_id": "", "timestamp": "date 5 may" , "groupName": "Group 7", "name": "Dhawal", "amount": 550, "type": false },
+    { "transaction_id": "", "timestamp": "date 5 may" ,  "groupName": "Group 8", "name": "Samyak", "amount": 550, "type": true},
+    {  "transaction_id": "", "timestamp": "date 5 may" , "groupName": "Group 9", "name": "Adish", "amount": 550, "type": false },
+    { "transaction_id": "", "timestamp": "date 5 may" ,  "groupName": "Group 10","name": "Anshika", "amount": 550, "type": true },
+    { "transaction_id": "", "timestamp": "date 5 may" ,  "groupName": "Group 11", "name": "Yash", "amount": 100, "type": false }
   ]
   

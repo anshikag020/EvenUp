@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_new_app/locator.dart';
 import 'package:my_new_app/sections/add_expense.dart';
+import 'package:my_new_app/sections/admin_selection_screen.dart';
 import 'package:my_new_app/sections/all_expenses.dart';
+import 'package:my_new_app/sections/main_page.dart';
 import 'package:my_new_app/sections/show_balances.dart';
+import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/general_utils.dart';
@@ -28,47 +32,183 @@ class GroupDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor:
+          Theme.of(context).brightness == Brightness.dark
+              ? AppColors.backgroundDark
+              : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.appBarColorDark : AppColors.appBarColorLight,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.dark
+                ? AppColors.appBarColorDark
+                : AppColors.appBarColorLight,
         title: Text(
           '$groupName: $groupType',
-          style: GoogleFonts.poppins(fontSize: 25, color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+          style: GoogleFonts.poppins(
+            fontSize: 25,
+            color:
+                Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.textDark
+                    : AppColors.textLight,
+          ),
         ),
         actions: [
           Builder(
             builder:
                 (context) => IconButton(
-                  icon: Icon(Icons.menu, color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                  icon: Icon(
+                    Icons.menu,
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
+                  ),
                   onPressed: () => Scaffold.of(context).openEndDrawer(),
                 ),
           ),
         ],
-        iconTheme: IconThemeData(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,),
+        iconTheme: IconThemeData(
+          color:
+              Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textDark
+                  : AppColors.textLight,
+        ),
       ),
       endDrawer: Drawer(
-        backgroundColor: Theme.of(context).brightness ==  Brightness.dark ? AppColors.backgroundDark : AppColors.backgroundLight,
+        backgroundColor:
+            Theme.of(context).brightness == Brightness.dark
+                ? AppColors.backgroundDark
+                : AppColors.backgroundLight,
         child: SafeArea(
           child: Column(
             children: [
               ListTile(
                 leading: Icon(
                   Icons.exit_to_app,
-                  color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textDark
+                          : AppColors.textLight,
                 ),
                 title: Text(
                   "Exit Group",
-                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                  style: GoogleFonts.poppins(
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
+                  ),
                 ),
-                onTap: () {},
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder:
+                        (context) => ConfirmationDialog(
+                          message: 'Do you wish to exit this group?',
+                          onConfirm: () async {
+                            final GroupUserPanelService service =
+                                locator<GroupUserPanelService>();
+                            final response = await service.exitGroup(groupID);
+
+                            if (response.status == true) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MainPage(initialIndex: 1),
+                                ),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(response.message)),
+                              );
+                            } else if (response.isAdmin == true) {
+                              // Navigate to admin selection screen with members list
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => AdminSelectionScreen(
+                                        members: response.membersList!,
+                                        groupId: groupID,
+                                      ),
+                                ),
+                              );
+                            } else {
+                              Navigator.pop(
+                                context,
+                              ); // Close confirmation dialog
+                              showDialog(
+                                context: context,
+                                builder:
+                                    (context) => AlertDialog(
+                                      title: const Text('Invalid'),
+                                      content: Text(response.message),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () => Navigator.pop(context),
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    ),
+                              );
+                            }
+                          },
+                          onCancel: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                  );
+                },
               ),
               ListTile(
-                leading: Icon(Icons.delete, color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                leading: Icon(
+                  Icons.delete,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textDark
+                          : AppColors.textLight,
+                ),
                 title: Text(
                   "Delete group",
-                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight),
+                  style: GoogleFonts.poppins(
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
+                  ),
                 ),
-                onTap: () {},
+                onTap: () {
+                  // handle the logic here
+
+                  showDialog(
+                    context: context,
+                    builder:
+                        (context) => ConfirmationDialog(
+                          message: 'Do you want to delete this group?',
+                          onConfirm: () async {
+                            final GroupUserPanelService service =
+                                locator<GroupUserPanelService>();
+                            final success = await service.deleteGroup(groupID, context);
+
+                            if (success == true) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MainPage(initialIndex: 1),
+                                ),
+                              );
+                              showCustomSnackBar(context, 'Group Deleted Successfully!', backgroundColor: Colors.green); 
+                            } else {
+                              Navigator.pop(
+                                context,
+                              ); 
+                            }
+                          },
+                          onCancel: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                  );
+                },
               ),
             ],
           ),
@@ -85,13 +225,22 @@ class GroupDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.box2Dark : AppColors.box2Light,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.box2Dark
+                          : AppColors.box2Light,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   "Invite Code: $inviteCode",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 20),
+                  style: GoogleFonts.poppins(
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
+                    fontSize: 20,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -100,12 +249,17 @@ class GroupDetailScreen extends StatelessWidget {
                   buildActionBox(
                     label: "All\nExpenses",
                     icon: Icons.receipt_long,
-                    gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.greenTileDark : AppColors.greenTileWhite, 
+                    gradient:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.greenTileDark
+                            : AppColors.greenTileWhite,
                     // onTap: () {},
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => AllExpensesScreen(groupID: groupID,)),
+                        MaterialPageRoute(
+                          builder: (_) => AllExpensesScreen(groupID: groupID),
+                        ),
                       );
                     },
                   ),
@@ -113,12 +267,15 @@ class GroupDetailScreen extends StatelessWidget {
                   buildActionBox(
                     label: "All\nBalances",
                     icon: Icons.menu_book,
-                    gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.blueTileDark : AppColors.blueTileWhite,
+                    gradient:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.blueTileDark
+                            : AppColors.blueTileWhite,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => AllBalancesScreen(groupID: groupID,),
+                          builder: (_) => AllBalancesScreen(groupID: groupID),
                         ),
                       );
                     },
@@ -128,12 +285,14 @@ class GroupDetailScreen extends StatelessWidget {
               const SizedBox(height: 20),
               GestureDetector(
                 onTap: () {
-                  
-                showDialog(
-                  context: context,
-                  builder: (_) => AddExpenseDialog(groupID: groupID,parentContext: context,),
-                );
-
+                  showDialog(
+                    context: context,
+                    builder:
+                        (_) => AddExpenseDialog(
+                          groupID: groupID,
+                          parentContext: context,
+                        ),
+                  );
                 },
                 child: Container(
                   width: double.infinity,
@@ -166,7 +325,7 @@ class GroupDetailScreen extends StatelessWidget {
               GestureDetector(
                 onTap: () {
                   GroupUtils.showGroupMembersDialog(
-                    context: context, 
+                    context: context,
                     groupId: groupID,
                   );
                 },
@@ -175,7 +334,10 @@ class GroupDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    gradient:Theme.of(context).brightness ==  Brightness.dark ? AppColors.purplrTileDark : AppColors.purplrTileWhite,
+                    gradient:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.purplrTileDark
+                            : AppColors.purplrTileWhite,
                     borderRadius: BorderRadius.circular(50),
                   ),
                   child: Text(
@@ -196,16 +358,21 @@ class GroupDetailScreen extends StatelessWidget {
                     GestureDetector(
                       onTap: () {
                         showDialog(
-                                context: context,
-                                builder: (context) => ConfirmationDialog(
-                                  message: 'Are you sure you want to use Confirm feature of OTS group?',
-                                  onConfirm: () {
-                                    // handle here
-                                    showCustomSnackBar(context, "You confirmed on this OTS group", backgroundColor: Color.fromRGBO(156, 13, 40, 1)); 
-                                  },
-                                  onCancel: () {},
-                                ),
-                              );
+                          context: context,
+                          builder:
+                              (context) => ConfirmationDialog(
+                                message:
+                                    'Are you sure you want to use Confirm feature of OTS group?',
+                                onConfirm: () async {
+                                  // handle here
+
+                                  final ConfirmOTS otsService = locator<ConfirmOTS>(); 
+                                  await otsService.confirmOTS(context, groupID); 
+                                  
+                                },
+                                onCancel: () {},
+                              ),
+                        );
                         // GroupUtils.showGroupMembersDialog(
                         //   context: context,
                         //   groupId: groupID,
@@ -216,7 +383,10 @@ class GroupDetailScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 17),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          gradient: Theme.of(context).brightness ==  Brightness.dark ? AppColors.redTileDark : AppColors.redTileLight,
+                          gradient:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.redTileDark
+                                  : AppColors.redTileLight,
                           borderRadius: BorderRadius.circular(50),
                         ),
                         child: Column(
@@ -247,7 +417,13 @@ class GroupDetailScreen extends StatelessWidget {
               const SizedBox(height: 34),
               Text(
                 "Description:",
-                style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 21),
+                style: GoogleFonts.poppins(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textDark
+                          : AppColors.textLight,
+                  fontSize: 21,
+                ),
               ),
               const SizedBox(height: 8),
               Container(
@@ -255,14 +431,22 @@ class GroupDetailScreen extends StatelessWidget {
                 constraints: BoxConstraints(minHeight: 150),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.box2Dark : AppColors.box2Light,
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.box2Dark
+                          : AppColors.box2Light,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   description.isNotEmpty
                       ? description
                       : "No description provided.",
-                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark2 : AppColors.textLight),
+                  style: GoogleFonts.poppins(
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textDark2
+                            : AppColors.textLight,
+                  ),
                 ),
               ),
             ],

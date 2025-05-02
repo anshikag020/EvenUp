@@ -147,4 +147,37 @@ class JoinGroupImpl implements JoinGroupService {
       throw Exception('Failed to join group: ${response.statusCode}');
     }
   }
+
+}
+
+class ResetPasswordFlowImpl implements ResetPasswordFlowService {
+  final String baseUrl;
+
+  ResetPasswordFlowImpl(this.baseUrl);
+
+  @override
+  Future<bool> resetPassword(String oldPassword, String newPassword) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/reset_password'), 
+      headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',},      
+      body: jsonEncode({'old_password': oldPassword, 'new_password': newPassword}),
+    );
+    
+
+    if (response.statusCode == 200 && response.body.isNotEmpty) {
+      final data = jsonDecode(response.body);
+      if (data['status']) {
+        return true; 
+      } else {
+        return false; 
+      }
+    } else {
+      throw Exception("Empty or invalid response from server");
+    }
+  }
 }

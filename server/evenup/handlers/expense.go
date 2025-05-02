@@ -1025,12 +1025,13 @@ func GetExpenseDetails(w http.ResponseWriter, r *http.Request) {
 		Status:       true,
 		Description:  description,
 		Tag:          intToTag(tagInt),
-		LastModified: timestamp.Format(time.RFC3339),
+		LastModified: timestamp.Format("02 Jan 2006 15:04"),
 		PaidBy:       paidBy,
 		OwedBy:       owedBy,
 		Amount:       totalAmount,
 	})
 }
+// Format("02 Jan 2006 15:04")
 
 
 

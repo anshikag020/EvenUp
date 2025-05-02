@@ -43,7 +43,9 @@ void setupLocator({bool useMock = true}) {
   );
 
   locator.registerLazySingleton<PingedSectionService>(() =>
-      useMock ? MockPingedSectionService() : ApiPingedSectionService(baseUrl: 'http://localhost:8080'));
+      useMock ? MockPingedSectionService() : PingedSectionServiceImpl(baseUrl: 'http://localhost:8080'));
+
+
 
   locator.registerLazySingleton<AuthService>(
   () => ApiAuthService(baseUrl: 'http://localhost:8080'),
@@ -64,6 +66,24 @@ void setupLocator({bool useMock = true}) {
   locator.registerLazySingleton<AddExpenseService>(
   () => AddExpenseServiceImpl('http://localhost:8080'),
   );
+  
+  locator.registerLazySingleton<SettleService>(
+  () => BalanceSettleServiceImpl('http://localhost:8080'),
+  );
 
- 
+  locator.registerLazySingleton<HandlePingedSectionService>(
+  () => HandlePingedSectionImpl(baseUrl: 'http://localhost:8080'),
+  );
+
+  locator.registerLazySingleton<GroupUserPanelService>(
+  () => GroupUserPanelImpl(baseUrl: 'http://localhost:8080'),
+  );
+
+  locator.registerLazySingleton<ConfirmOTS>(
+  () => ConfirmOTSImpl(baseUrl: 'http://localhost:8080'),
+  );
+
+  locator.registerLazySingleton<ResetPasswordFlowService>(
+  () => ResetPasswordFlowImpl('http://localhost:8080'),
+  );
 }

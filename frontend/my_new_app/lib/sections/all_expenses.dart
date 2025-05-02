@@ -176,10 +176,9 @@ class _AllExpensesScreenState extends State<AllExpensesScreen> {
                               showDialog(
                                 context: context,
                                 builder: (context) => ExpenseDetailDialog(
+                                  groupID: widget.groupID, 
                                   expenseID: item.expenseID,
-                                  onDelete: () {
-                                    Navigator.of(context).pop();
-                                  },
+                                  onDeleteSuccessCall: _loadExpenses
                                 ),
                               );
                             },

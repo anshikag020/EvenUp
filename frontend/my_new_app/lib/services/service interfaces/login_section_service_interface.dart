@@ -8,4 +8,7 @@ abstract class AuthService {
   Future<User> getUserDetails(BuildContext context);
   Future<void> logout();
   Future<SignUpResponse> signup(SignUpDataModel signUpData);
+  Future<bool> forgotPassword(String emailID); 
+  Future<String?> otpConfirm(String emailID, String otp); 
+  Future<bool> resetConfirm(String emailID, String resetToken, String newPassword); 
 }

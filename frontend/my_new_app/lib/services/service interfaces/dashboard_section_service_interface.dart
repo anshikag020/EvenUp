@@ -13,4 +13,8 @@ abstract class CreatePrivateSplitService {
 abstract class JoinGroupService {
   Future<void> joinGroupByCode(JoinGroupModel joinModel, BuildContext context);
 }
+
+abstract class ResetPasswordFlowService {
+  Future<bool> resetPassword(String oldPassword, String newPassword);
+}
  

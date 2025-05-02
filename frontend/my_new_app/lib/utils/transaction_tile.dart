@@ -5,8 +5,9 @@ import 'package:my_new_app/theme/app_colors.dart';
 class FancyTransactionTile extends StatelessWidget {
   final String groupName;
   final String name;
-  final String amount;
-  final String type; 
+  final int amount;
+  final bool type; 
+  final String timestamp; 
 
   const FancyTransactionTile({
     super.key,
@@ -14,6 +15,7 @@ class FancyTransactionTile extends StatelessWidget {
     required this.name,
     required this.amount,
     required this.type, 
+    required this.timestamp
   });
 
   @override
@@ -27,10 +29,28 @@ class FancyTransactionTile extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 10),
-          Text(
-            groupName,
-            style: TextStyle(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 20),
-            textAlign: TextAlign.center,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Group: ",
+                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 16),
+                ),
+                Text(
+                  groupName,
+                  style: GoogleFonts.poppins(
+                    color:  Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
           // Top Row
           Container(
@@ -42,14 +62,14 @@ class FancyTransactionTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  (type == '1') ?  
+                  (type == false) ?  
                   "Paid by:": "Paid to:" , 
                   style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? AppColors.textDark : AppColors.textLight, fontSize: 16),
                 ),
                 Text(
                   name,
                   style: GoogleFonts.poppins(
-                    color: (type == '1') ? Color(0xFFCBFF41) : const Color.fromARGB(255, 239, 99, 89),
+                    color: (type == false) ? Color(0xFFCBFF41) : const Color.fromARGB(255, 239, 99, 89),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
@@ -83,7 +103,7 @@ class FancyTransactionTile extends StatelessWidget {
                 Text(
                   "₹ $amount",
                   style: GoogleFonts.poppins(
-                    color: (type == '1') ? Color(0xFFCBFF41) : const Color.fromARGB(255, 239, 99, 89),
+                    color: (type == false ) ? Color(0xFFCBFF41) : const Color.fromARGB(255, 239, 99, 89),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -91,6 +111,28 @@ class FancyTransactionTile extends StatelessWidget {
               ],
             ),
           ),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Timestamp:",
+                  style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? const Color.fromARGB(173, 255, 255, 255) : AppColors.textLight, fontSize: 16),
+                ),
+                Text(
+                  timestamp,
+                   style: GoogleFonts.poppins(color: Theme.of(context).brightness ==  Brightness.dark ? const Color.fromARGB(173, 255, 255, 255) : AppColors.textLight, fontSize: 16),
+                  ),
+                
+              ],
+            ),
+          ),
+          
         ],
       ),
     );

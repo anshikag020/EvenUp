@@ -22,6 +22,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
 
   String? username;
+  String? email; 
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = await api.getUserDetails(context);
     setState(() {
       username = user.name;
+      email = user.email; 
     });
   }
 
@@ -100,6 +102,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 onResetPassword: () {},
                                 onLogout: () {},
                                 username: username, 
+                                email: email,
                               );
                             },
                             transitionBuilder: (_, anim, __, child) {

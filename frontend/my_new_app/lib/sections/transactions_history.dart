@@ -96,7 +96,8 @@ class _TransactionsHistoryScreenState extends State<TransactionsHistoryScreen> {
                                 groupName: txn.groupName, 
                                 name: txn.name, 
                                 amount: txn.amount,
-                                type: txn.type
+                                type: txn.type,
+                                timestamp: txn.timestamp,
                               );
                       },
                     )

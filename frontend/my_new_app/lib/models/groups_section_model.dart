@@ -81,9 +81,12 @@ class ExpenseModel {
 class DetailedExpenseModel {
   final String description;
   final String amount;
+  // final double amount;
   final String tag; 
-  final List<String> paidBy;
-  final List<String> owedBy;
+  // final List<String> paidBy;
+  // final List<String> owedBy;
+  final Map<String, double> paidBy; 
+  final Map<String, double> owedBy; 
   final String lastUpdatedBy;
 
   DetailedExpenseModel({
@@ -98,13 +101,20 @@ class DetailedExpenseModel {
   factory DetailedExpenseModel.fromJson(Map<String, dynamic> json) {
   return DetailedExpenseModel(
     description: json['description'] ?? '',
+    // amount: json['amount'],
     amount: json['amount'].toString(),
     tag: json['tag'] ?? '', 
-    paidBy: (json['paid_by'] as Map<String, dynamic>).keys.toList(),
-    owedBy: (json['owed_by'] as Map<String, dynamic>).keys.toList(),
+    // paidBy: (json['paid_by'] as Map<String, dynamic>).keys.toList(),
+    // owedBy: (json['owed_by'] as Map<String, dynamic>).keys.toList(),
+    paidBy:  (json['paid_by'] as Map).map(
+        (key, value) => MapEntry(key, (value as num).toDouble()),
+      ),
+    owedBy: (json['owed_by'] as Map).map(
+        (key, value) => MapEntry(key, (value as num).toDouble()),
+      ),
     lastUpdatedBy: json['last_modified'] ?? '',
   );
-}
+} 
 
 
   Map<String, dynamic> toJson() {

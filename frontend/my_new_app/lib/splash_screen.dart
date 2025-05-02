@@ -18,7 +18,7 @@ class AnimatedSplashScreenWidget extends StatelessWidget {
       nextScreen: AuthWrapper(), 
       splashIconSize: 200,
       backgroundColor: const Color.fromARGB(255, 38, 38, 38),
-      duration: 3000,
+      duration: 2500,
     );
   }
 }

@@ -1,32 +1,39 @@
 class TransactionModel {
+  final String transactionId;
   final String groupName; 
   final String name;
-  final String amount;
-  final String type; 
+  final int amount;
+  final bool type; 
+  final String timestamp; 
 
   TransactionModel({
+    required this.transactionId,
     required this.groupName, 
     required this.name,
     required this.amount,
     required this.type, 
+    required this.timestamp
   });
 
-  // ✅ This is what you need
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
-      groupName: json['groupName'] ?? 'unkown' ,
-      name: json['name'] ?? '',
-      amount: json['amount'] ?? '0',
-      type: json['type'] ?? '1', 
+      transactionId: json['transaction_id'] ?? 'unkown',
+      groupName: json['group_name'] ?? 'unkown' ,
+      name: json['other_user'] ?? '',
+      amount: json['amount'] ?? 0,
+      type: json['is_sender'] ?? true, 
+      timestamp: json['timestamp'] ?? 'unknown', 
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'transaction_id': transactionId, 
       'groupName': groupName, 
       'name': name,
       'amount': amount,
       'type': type, 
+      'timestamp': timestamp
     };
   }
 }

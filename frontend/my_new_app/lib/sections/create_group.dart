@@ -7,7 +7,6 @@ import 'package:my_new_app/services/service%20interfaces/dashboard_section_servi
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
 import 'package:my_new_app/utils/create_group_utils.dart';
-import 'package:my_new_app/utils/general_utils.dart';
 
 class CreateGroupDialog extends StatefulWidget {
   const CreateGroupDialog({super.key});
@@ -99,57 +98,51 @@ class _CreateGroupDialogState extends State<CreateGroupDialog> {
                       ? AppColors.greenButtondarktheme
                       : AppColors.greenButtonwhitetheme,
                   () {
+                    final groupName = _nameController.text.trim();
+                    final groupDesc = _descController.text.trim();
+
+                    if (groupName.isEmpty || groupDesc.isEmpty) {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("Missing Information"),
+                          content: const Text("Please fill in all fields before proceeding."),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text("OK"),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
+
                     showDialog(
                       context: context,
-                      builder:
-                          (context) => ConfirmationDialog(
-                            message:
-                                'Are you sure you want to create this group?',
-                            onConfirm: () async {
-                              
-                                Navigator.pop(
-                                  context,
-                                ); // Close confirmation dialog first
+                      builder: (context) => ConfirmationDialog(
+                        message: 'Are you sure you want to create this group?',
+                        onConfirm: () async {
+                          Navigator.pop(context); // Close confirmation dialog
 
+                          final type = groupType;
 
-                                final groupName = _nameController.text.trim();
-                                final groupDesc = _descController.text.trim();
-                                final type = groupType;
+                          final newGroup = CreateGroupModel(
+                            groupName: groupName,
+                            groupDescription: groupDesc,
+                            groupType: "$type Group",
+                          );
 
-                                if (groupName.isEmpty || groupDesc.isEmpty) {
-                                  showCustomSnackBar(
-                                    context,
-                                    "Please fill all fields",
-                                    backgroundColor: Colors.red,
-                                  );
-                                  return;
-                                }
-                                final newGroup = CreateGroupModel(
-                                  groupName: groupName,
-                                  groupDescription: groupDesc,
-                                  groupType: "$type Group",
-                                );
+                          final CreateGroupService groupService = locator<CreateGroupService>();
+                          await groupService.createNewGroup(newGroup, context);
+                        },
+                        onCancel: () {
+                          Navigator.pop(context); // Just close the dialog
+                        },
+                      ),
+                    );
+                  }
 
-                                final CreateGroupService groupService =
-                                    locator<CreateGroupService>();
-                                await groupService.createNewGroup(
-                                  newGroup,
-                                  context,
-                                );
-                              
-
-                              // showCustomSnackBar(
-                              //   context,
-                              //   "New group created successfully",
-                              //   backgroundColor: const Color.fromRGBO(6, 131, 81, 1)
-                              // );
-                            },
-                            onCancel: () {
-                              Navigator.pop(context); // Just close the dialog
-                            },
-                          ),
-                    ); // Call your group creation logic here
-                  },
                 ),
                 buildActionButton(
                   width,

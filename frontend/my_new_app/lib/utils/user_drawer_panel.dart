@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/sections/login_page.dart';
-import 'package:my_new_app/sections/reset_password_page.dart';
+import 'package:my_new_app/sections/reset_password_dashboard_page.dart';
 import 'package:my_new_app/services/api_services/api_login_section.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
@@ -14,6 +14,7 @@ class UserDrawerPanel extends StatefulWidget {
   final VoidCallback onResetPassword;
   final VoidCallback onLogout;
   final String? username;
+  final String? email;
 
   const UserDrawerPanel({
     super.key,
@@ -22,6 +23,7 @@ class UserDrawerPanel extends StatefulWidget {
     required this.onResetPassword,
     required this.onLogout,
     required this.username,
+    required this.email,
   });
 
   @override
@@ -30,13 +32,14 @@ class UserDrawerPanel extends StatefulWidget {
 
 class _UserDrawerPanelState extends State<UserDrawerPanel> {
   late bool darkMode;
-  late String? username; 
+  late String? username;
+  late String email;
 
   @override
   void initState() {
     super.initState();
     darkMode = widget.isDarkMode;
-    username = widget.username; 
+    username = widget.username;
   }
 
   @override
@@ -115,15 +118,23 @@ class _UserDrawerPanelState extends State<UserDrawerPanel> {
                           ),
                         ),
                         onTap: () {
-                          widget.onResetPassword;
+                          // widget.onResetPassword;
 
                           //  write the logic correctly
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ResetPasswordPage(),
+                              builder: (_) => PanelResetPasswordPage(),
                             ),
                           );
+
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (_) => ResetPasswordPage(email: email),
+                          //   ),
+                          // );
                         },
                         contentPadding: const EdgeInsets.fromLTRB(
                           20,
@@ -159,10 +170,11 @@ class _UserDrawerPanelState extends State<UserDrawerPanel> {
                                   message: 'Are you sure you want to logout?',
                                   onConfirm: () async {
                                     // handle logic here
-                                    await ApiAuthService( baseUrl: "http://127.0.0.1:8080/api").logout();
+                                    await ApiAuthService(
+                                      baseUrl: "http://127.0.0.1:8080/api",
+                                    ).logout();
                                     // Navigator.pushReplacementNamed(context, '/login');
 
-                                    
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(

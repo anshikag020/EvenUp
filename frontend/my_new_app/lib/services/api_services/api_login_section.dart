@@ -73,4 +73,60 @@ class ApiAuthService implements AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwtToken');
   }
+
+  @override
+  Future<bool> forgotPassword(String emailID) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/forgot_password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': emailID}),
+    );
+
+
+    if (response.statusCode == 200 && response.body.isNotEmpty) {
+      final data = jsonDecode(response.body);
+      if (data['status']) {
+        return true; 
+      } else {
+        return false; 
+      }
+    } else {
+      throw Exception("Empty or invalid response from server");
+    }
+  }
+
+  @override
+  Future<String?> otpConfirm(String emailID, String otp) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/confirm_otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': emailID, 'otp': otp}),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (data['status'] == true && data.containsKey('reset_token')) {
+      return data['reset_token']; // return the token to be used for password reset
+    } else {
+      return null; // OTP invalid or expired
+    }
+  }
+
+  @override
+  Future<bool> resetConfirm(String emailID, String resetToken, String newPassword) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/forgot_reset_password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': emailID, 'reset_token': resetToken, 'new_password': newPassword}),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (data['status']) {
+      return true; 
+    } else {
+      return false; 
+    }
+  }
+  
 }

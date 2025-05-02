@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
+import 'package:my_new_app/services/service%20interfaces/expense_service_interface.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
 import 'package:my_new_app/theme/app_colors.dart';
 import 'package:my_new_app/utils/confirmation_dialogbox.dart';
@@ -135,19 +136,37 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                                       (context) => ConfirmationDialog(
                                         message:
                                             'Do you wish to settle up this balance?',
-                                        onConfirm: () {
+                                        onConfirm: () async {
                                           // handle logic here
-                                          showCustomSnackBar(
-                                            context,
-                                            "Balance settled up from your side",
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  58,
-                                                  133,
-                                                  61,
-                                                ),
-                                          );
+
+                                          final SettleService service = locator<SettleService>(); 
+                                          final success = await service.settleBalance( widget.groupID, balance.user2); 
+
+                                          if( success ){
+                                            Navigator.pop(context);
+                                              // Navigator.pop(context, true);
+                                            showCustomSnackBar(
+                                              context,
+                                              "Balance settled up from your side",
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                    255,
+                                                    58,
+                                                    133,
+                                                    61,
+                                                  ),
+                                            );
+                                            await _initData(); 
+                                              
+                                          }
+                                          else {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('Balance settlement failed'),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                          }
                                         },
                                         onCancel: () {
                                           // Just close the dialog
@@ -188,20 +207,42 @@ class _AllBalancesScreenState extends State<AllBalancesScreen> {
                                       (context) => ConfirmationDialog(
                                         message:
                                             'Do you wish to send a reminder?',
-                                        onConfirm: () {
+                                        onConfirm: () async {
                                           // handle here
 
-                                          showCustomSnackBar(
-                                            context,
-                                            "Reminder sent to ${balance.user1} to pay ${balance.user2}",
-                                            backgroundColor:
-                                                const Color.fromARGB(
-                                                  255,
-                                                  233,
-                                                  30,
-                                                  99,
-                                                ),
-                                          );
+                                          final SettleService remindService = locator<SettleService>(); 
+                                          final success = await remindService.remindBalance(widget.groupID, balance.user1); 
+
+                                          if( success )
+                                          {
+                                            showCustomSnackBar(
+                                              context,
+                                              "Reminder sent to ${balance.user1} to pay ${balance.user2}",
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                    255,
+                                                    233,
+                                                    30,
+                                                    99,
+                                                  ),
+                                            ); 
+                                          }
+                                          else 
+                                          {
+                                            showCustomSnackBar(
+                                              context,
+                                              "Error occurred, try again later!",
+                                              backgroundColor:
+                                                  const Color.fromARGB(
+                                                    255,
+                                                    233,
+                                                    30,
+                                                    99,
+                                                  ),
+                                            ); 
+                                          }
+
+                                          
                                         },
                                         onCancel: () {
                                           // Just close the dialog

@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:my_new_app/models/exit_group_models.dart';
 import 'package:my_new_app/models/groups_section_model.dart';
 import 'package:my_new_app/services/api_services/utility_check_invalid_token.dart';
 import 'package:my_new_app/services/service%20interfaces/groups_section_service_interface.dart';
+import 'package:my_new_app/utils/general_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiGroupService implements GroupService {
@@ -36,12 +38,50 @@ class ApiGroupService implements GroupService {
     }
 
     final data = jsonDecode(response.body);
-    final List<dynamic> groupList = data['groups'];
+    final List<dynamic> groupList = data['groups'] ?? [];
 
     List<GroupModel> groups =
         groupList.map((groupJson) => GroupModel.fromJson(groupJson)).toList();
 
     return groups;
+  }
+}
+
+class ConfirmOTSImpl implements ConfirmOTS {
+  final String baseUrl;
+
+  ConfirmOTSImpl({required this.baseUrl});
+
+  @override
+  Future<void> confirmOTS(BuildContext context, String groupId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/ots/confirm'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'group_id': groupId}),
+    );
+
+    // print(response.statusCode);
+    if (response.statusCode == 401) {
+      redirectToLoginPage(context);
+    }
+
+    // print(response.statusCode);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      showCustomSnackBar(
+        context,
+        data['message'],
+        backgroundColor: Color.fromRGBO(156, 13, 40, 1),
+      );
+    } else {
+      throw Exception("Failed to confirm OTS button");
+    }
   }
 }
 
@@ -82,20 +122,74 @@ class GroupUserPanelImpl implements GroupUserPanelService {
   GroupUserPanelImpl({required this.baseUrl});
 
   @override
-  Future<void> exitGroup(String groupId) async {
+  Future<ExitGroupResponse> exitGroup(String groupId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwtToken');
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/get_members?group_id=$groupId'),
-      headers: {'Authorization': 'Bearer $token'},
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/exit_group'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'group_id': groupId}),
     );
 
     if (response.statusCode == 200) {
-      // final Map<String, dynamic> json = jsonDecode(response.body);
-      // handling required here
+      return ExitGroupResponse.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception("Failed to load group members");
+      throw Exception('Failed to exit group: ${response.body}');
+    }
+  }
+
+  @override
+  Future<SelectAdminResponse> selectAnotherAdmin(
+    String groupId,
+    String newAdmin,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/select_another_admin'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'group_id': groupId, 'new_admin': newAdmin}),
+    );
+
+    if (response.statusCode == 200) {
+      return SelectAdminResponse.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to select another admin: ${response.body}');
+    }
+  }
+
+  @override
+  Future<bool> deleteGroup(String groupId, BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwtToken');
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/delete_group'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'group_id': groupId}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status']) {
+        return true;
+      } else {
+        showCustomSnackBar(context, data['message']);
+        return false;
+      }
+    } else {
+      throw Exception('Failed to select another admin: ${response.body}');
     }
   }
 }
@@ -121,7 +215,7 @@ class ApiExpenseService implements ExpenseService {
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> json = jsonDecode(response.body);
-      final List<dynamic> expenses = json['expenses'];
+      final List<dynamic> expenses = json['expenses'] ?? [];
       return expenses.map((e) => ExpenseModel.fromJson(e)).toList();
     } else {
       throw Exception('Failed to load expenses: ${response.statusCode}');
@@ -150,7 +244,8 @@ class ApiBalanceService implements BalanceService {
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> json = jsonDecode(response.body);
-      final List<dynamic> balances = json['balances'];
+      final List<dynamic> balances = json['balances'] ?? [];
+      // print( balances );
       return balances.map((e) => Balance.fromJson(e)).toList();
 
       // final List<dynamic> data = json.decode(response.body);

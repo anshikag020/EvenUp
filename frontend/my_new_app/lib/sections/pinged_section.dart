@@ -40,7 +40,7 @@ class _PingedScreenState extends State<PingedScreen> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredPings = _allPings
-          .where((ping) => ping.username.toLowerCase().contains(query))
+          .where((ping) => ping.otherMember.toLowerCase().contains(query))
           .toList();
     });
   }
@@ -103,14 +103,47 @@ class _PingedScreenState extends State<PingedScreen> {
                           final ping = _filteredPings[index];
                           return PingCard(
                             transacID: ping.transacID,
-                            name: ping.username,
+                            otherMember: ping.otherMember,
                             amount: ping.amount,
+                            isSender: ping.isSender,
                             groupName: ping.groupName,
-                            onAccept: () {
+                            onAccept: () async {
                               // handle accept
+                              final HandlePingedSectionService service = locator<HandlePingedSectionService>(); 
+                              final success = await service.acceptPingedTransaction(ping.transacID);
+                              if( !success )
+                              {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Transaction acceptance failed'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                              else
+                              {
+                                _fetchTransactions(); 
+                              }
+
                             },
-                            onReject: () {
+                            onReject: () async {
                               // handle reject
+
+                              final HandlePingedSectionService service = locator<HandlePingedSectionService>(); 
+                              final success = await service.rejectPingedTransaction(ping.transacID);
+                              if( !success )
+                              {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Transaction rejection failed'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                              else
+                              {
+                                _fetchTransactions(); 
+                              }
                             },
                           );
                         } else {

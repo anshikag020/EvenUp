@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_new_app/locator.dart';
+import 'package:my_new_app/sections/forgot_password_email_page.dart';
 import 'package:my_new_app/sections/main_page.dart';
-import 'package:my_new_app/sections/reset_password_page.dart';
 import 'package:my_new_app/services/service%20interfaces/login_section_service_interface.dart';
+// import 'package:my_new_app/sections/reset_password_page.dart';
 import 'signup_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -44,7 +45,7 @@ final TextEditingController _passwordController = TextEditingController();
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const ResetPasswordPage()),
+                        MaterialPageRoute(builder: (_) => EmailOtpPage()),
                       );
                     },
                     child: const Text(
