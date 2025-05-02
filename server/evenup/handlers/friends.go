@@ -11,8 +11,8 @@ import (
 	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"github.com/anshikag020/EvenUp/server/evenup/services"
 	// "github.com/google/uuid"
-    "github.com/lib/pq"
-
+    // "github.com/lib/pq"
+     "github.com/shopspring/decimal"
 	"github.com/anshikag020/EvenUp/ws_server/pubsub"
 )
 
@@ -89,130 +89,122 @@ func GetFriendsPageRecords(w http.ResponseWriter, r *http.Request) {
 }
 
 // SettleUpFriendsPage moves *all* outstanding balances
-// between the current user and friend into intermediate_transactions.
+// (sender = me, receiver = friend) into intermediate_transactions.
 func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
-    // 1) auth
-    me, ok := middleware.GetUsernameFromContext(r)
-    if !ok {
-        http.Error(w, "User not authorized", http.StatusUnauthorized)
+	/* ─── 1. Auth ──────────────────────────────────────────────── */
+	me, ok := middleware.GetUsernameFromContext(r)
+	if !ok {
+		http.Error(w, "User not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	/* ─── 2. Parse body ───────────────────────────────────────── */
+	var req struct {
+		FriendName string `json:"friend_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Malformed request body", http.StatusBadRequest)
+		return
+	}
+	if req.FriendName == "" || req.FriendName == me {
+		http.Error(w, "Invalid friend name", http.StatusBadRequest)
+		return
+	}
+
+	/* ─── 3. Begin transaction ───────────────────────────────── */
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	/* ─── 4. Move + sum in one CTE ────────────────────────────── */
+	var total decimal.Decimal
+	err = tx.QueryRow(`
+		WITH moved AS (
+			DELETE FROM balances
+			WHERE sender = $1 AND receiver = $2
+			RETURNING group_id, sender, receiver, amount
+		)
+		INSERT INTO intermediate_transactions
+		    (group_id, sender, receiver, amount)
+		SELECT  group_id, sender, receiver, amount
+		FROM moved
+		RETURNING COALESCE(SUM(amount), 0)
+	`, me, req.FriendName).Scan(&total)
+	if err != nil {
+        // Log the full error for debugging
+        log.Printf(
+            "Error moving balances into intermediate_transactions for %s→%s: %v",
+            me, req.FriendName, err,
+        )
+        // Return the exact error message in the response body
+        http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
+        return
+    }
+    if total.IsZero() {
+        http.Error(w, "No outstanding balance with that user", http.StatusConflict)
         return
     }
 
-    // 2) parse friend name
-    var req struct{ FriendName string `json:"friend_name"` }
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, "Malformed request body", http.StatusBadRequest)
-        return
-    }
-    
-    // 3) move each balance row into intermediate_transactions
-    tx, err := config.DB.Begin()
-    if err != nil {
-        http.Error(w, "Server error", http.StatusInternalServerError)
-        return
-    }
-    defer tx.Rollback()
+	// /* ─── 5. Look up names / email ───────────────────────────── */
+	// var senderName, receiverName, receiverEmail string
+	// if err := tx.QueryRow(`SELECT name FROM users WHERE username = $1`, me).
+	// 	Scan(&senderName); err != nil {
+	// 	http.Error(w, "DB error", http.StatusInternalServerError)
+	// 	return
+	// }
+	// if err := tx.QueryRow(`
+	// 	SELECT name, email FROM users WHERE username = $1`, req.FriendName).
+	// 	Scan(&receiverName, &receiverEmail); err != nil {
+	// 	http.Error(w, "DB error", http.StatusInternalServerError)
+	// 	return
+	// }
 
-    rows, err := tx.Query(`
-        SELECT group_id, amount
-        FROM balances
-        WHERE sender = $1 AND receiver = $2
-    `, me, req.FriendName)
-    if err != nil {
-        http.Error(w, "DB error", http.StatusInternalServerError)
-        return
-    }
-    
-    defer rows.Close()
-    var totalAmount float64
-    var senderName, receiverName, receiverEmail string
-    for rows.Next() {
-        var gid string
-        var amt float64
-        if err := rows.Scan(&gid, &amt); err != nil {
-            continue
-        }
-        
-        // insert into in‐transit
-        _, err := tx.Exec(`
-        INSERT INTO intermediate_transactions
-            (group_id, sender, receiver, amount)
-        VALUES
-            ($1, $2, $3, $4)
-    `, gid, me, req.FriendName, amt)
-    if err != nil {
-        // If it's a Postgres error, unwrap for full detail
-        if pgErr, ok := err.(*pq.Error); ok {
-            log.Printf(
-                "Postgres error inserting intermediate_transaction for group %s: code=%s, message=%s, detail=%s, hint=%s, where=%s",
-                gid, pgErr.Code, pgErr.Message, pgErr.Detail, pgErr.Hint, pgErr.Where,
-            )
-        } else {
-            log.Printf(
-                "Error inserting intermediate_transaction for group %s: %v",
-                gid, err,
-            )
-        }
-    }
-        totalAmount += amt
-    }
-    
+	/* ─── 6. Commit ──────────────────────────────────────────── */
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
 
-    // then delete the settled balances
-    _, _ = tx.Exec(`
-        DELETE FROM balances
-        WHERE sender = $1 AND receiver = $2
-    `, me, req.FriendName)
+	/* ─── 7. Send email (async) ──────────────────────────────── */
+// 	go func() {
+// 		if receiverEmail == "" {
+// 			return
+// 		}
+// 		subject := "Settlement initiated"
+// 		body := fmt.Sprintf(`Hi %s,
 
-    
-    // look up names + email
-    err = tx.QueryRow(`SELECT name FROM users WHERE username=$1`, me).
-            Scan(&senderName)
-    if err != nil { // Check error
-        log.Printf("Error fetching sender name: %v", err)
-    }
+// %s has initiated a settlement with you on Evenup.
+// Total amount of money: ₹%s.
 
-    _ = tx.QueryRow(`SELECT name, email FROM users WHERE username=$1`, req.FriendName).
-            Scan(&receiverName, &receiverEmail)
+// Please open the app to review and confirm.
 
-    if err := tx.Commit(); err != nil {
-        http.Error(w, "Server error", http.StatusInternalServerError)
-        return
-    }
+// Thanks,
+// Evenup Team`,
+// 			receiverName, senderName, total.StringFixed(2))
 
-    go func() {
-        if receiverEmail == "" { return }
-    
-        subject := "Settlement initiated"
-        body := fmt.Sprintf(
-    `Hi %s,
-    
-    %s has initiated a settlement with you on Evenup.
-    Total amount of money: ₹%.2f.
-    
-    Please open the app to review and confirm.
-    
-    Thanks,
-    Evenup Team`,
-            receiverName, senderName, totalAmount)
-    
-        if err := services.SendMail([]string{receiverEmail}, subject, body); err != nil {
-            log.Println("mail send failed:", err)
-        }
-    }()
+// 		if err := services.SendMail([]string{receiverEmail}, subject, body); err != nil {
+// 			log.Println("mail send failed:", err)
+// 		}
+// 	}()
 
-    // Notify all clients to refresh the friends page
-    if WS != nil {
-        pubsub.NotifyRefresh(WS, "friends")
-    }
+	/* ─── 8. Tell clients to refresh ─────────────────────────── */
+	if WS != nil {
+		pubsub.NotifyRefresh(WS, "friends")
+	}
 
-    json.NewEncoder(w).Encode(map[string]interface{}{
-        "status":  true,
-        "message": "Settle up initiated",
-    })
+	/* ─── 9. Respond ─────────────────────────────────────────── */
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"status":       true,
+		"message":      "Settle up initiated",
+		"total_amount": total.StringFixed(2),
+	})
 }
+
 
 // RemindFriendsPage sends a one‐off email reminder to your friend
 // for any outstanding balance they owe you.
