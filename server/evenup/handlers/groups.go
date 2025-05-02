@@ -577,10 +577,6 @@ func SelectAnotherAdmin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
-	if err := tx.Commit(); err != nil {
-		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
-		return
-	}
 	
 	// ───────── send notification asynchronously ─────────
 	go func() {

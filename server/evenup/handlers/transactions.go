@@ -29,6 +29,8 @@ func GetInTransitTransactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+	
+	log.Println("Hello, world!")
 
 	// Step 3: Query intermediate transactions involving the user
 	rows, err := tx.Query(`

@@ -32,6 +32,25 @@ func CreateUserAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(req.Username) > 256 {
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": "Username must be at most 256 characters",
+        })
+        return
+    }
+    if len(req.Password) > 256 {
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "status":  false,
+            "message": "Password must be at most 256 characters",
+        })
+        return
+    }
+
 	// Starting an atomic task
 	tx, err := config.DB.Begin()
 	if err != nil {

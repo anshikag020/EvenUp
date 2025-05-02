@@ -125,28 +125,3 @@ AFTER DELETE ON group_participants
 FOR EACH ROW
 EXECUTE FUNCTION delete_empty_group();
 
-
-
-
--- INSERT INTO users (username, name, email, password) VALUES
--- ('user1', 'Alice Smith', 'alice@example.com', crypt('password123', gen_salt('bf'))),
--- ('user2', 'Bob Johnson', 'bob@example.com', crypt('securepass', gen_salt('bf'))),
--- ('user3', 'Charlie Brown', 'charlie@example.com', crypt('mypassword', gen_salt('bf')));
-
--- INSERT INTO groups (group_name, group_type, admin_username) VALUES
--- ('Trip to Paris', 0, 'user1'),
--- ('Weekend Getaway', 1, 'user2'),
--- ('Office Party', 2, 'user3');
-
--- INSERT INTO group_participants (group_id, participant) VALUES
--- ((SELECT group_id FROM groups WHERE group_name = 'Trip to Paris'), 'user2'),
--- ((SELECT group_id FROM groups WHERE group_name = 'Trip to Paris'), 'user3');
-
--- INSERT INTO group_participants (group_id, participant) VALUES
--- ((SELECT group_id FROM groups WHERE group_name = 'Weekend Getaway'), 'user1'),
--- ((SELECT group_id FROM groups WHERE group_name = 'Weekend Getaway'), 'user3'),
--- ((SELECT group_id FROM groups WHERE group_name = 'Office Party'), 'user1'),
--- ((SELECT group_id FROM groups WHERE group_name = 'Office Party'), 'user2');
-
-
--- DELETE FROM groups WHERE group_name = 'Office Party';

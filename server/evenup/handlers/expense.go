@@ -389,7 +389,16 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		if len(involved) == 0 {
 			return
 		}
-	
+		
+		var groupName string
+		if err := config.DB.QueryRow(
+			`SELECT group_name FROM groups WHERE group_id=$1`,
+			req.GroupID,
+		).Scan(&groupName); err != nil {
+			log.Println("could not load group_name for email:", err)
+			groupName = req.GroupID // fallback
+		}
+
 		// Fetch emails of involved users
 		usernames := make([]string, 0, len(involved))
 		for u := range involved {
@@ -439,7 +448,7 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 				Thanks,
 				Evenup Team`,
 						fullName,
-						username, req.GroupID,
+						username, groupName,
 						req.Description,
 						req.Amount,
 						expenseTime,
