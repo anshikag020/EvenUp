@@ -2,16 +2,18 @@
 package handlers
 
 import (
-    "encoding/json"
-    "log"
+	"encoding/json"
 	"fmt"
-    "net/http"
+	"log"
+	"net/http"
 
-    "github.com/anshikag020/EvenUp/server/evenup/config"
-    "github.com/anshikag020/EvenUp/server/evenup/middleware"
+	"github.com/anshikag020/EvenUp/server/evenup/config"
+	"github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"github.com/anshikag020/EvenUp/server/evenup/services"
+	// "github.com/google/uuid"
+    "github.com/lib/pq"
 
-    "github.com/anshikag020/EvenUp/ws_server/pubsub"
+	"github.com/anshikag020/EvenUp/ws_server/pubsub"
 )
 
 type FriendRecord struct {
@@ -104,7 +106,7 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Malformed request body", http.StatusBadRequest)
         return
     }
-
+    
     // 3) move each balance row into intermediate_transactions
     tx, err := config.DB.Begin()
     if err != nil {
@@ -122,6 +124,7 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "DB error", http.StatusInternalServerError)
         return
     }
+    
     defer rows.Close()
     var totalAmount float64
     var senderName, receiverName, receiverEmail string
@@ -131,15 +134,31 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
         if err := rows.Scan(&gid, &amt); err != nil {
             continue
         }
+        
         // insert into in‐transit
-        _, _ = tx.Exec(`
-            INSERT INTO intermediate_transactions
-                (transaction_id, group_id, sender, receiver, amount)
-            VALUES
-                (gen_random_uuid(), $1, $2, $3, $4)
-        `, gid, me, req.FriendName, amt)
+        _, err := tx.Exec(`
+        INSERT INTO intermediate_transactions
+            (group_id, sender, receiver, amount)
+        VALUES
+            ($1, $2, $3, $4)
+    `, gid, me, req.FriendName, amt)
+    if err != nil {
+        // If it's a Postgres error, unwrap for full detail
+        if pgErr, ok := err.(*pq.Error); ok {
+            log.Printf(
+                "Postgres error inserting intermediate_transaction for group %s: code=%s, message=%s, detail=%s, hint=%s, where=%s",
+                gid, pgErr.Code, pgErr.Message, pgErr.Detail, pgErr.Hint, pgErr.Where,
+            )
+        } else {
+            log.Printf(
+                "Error inserting intermediate_transaction for group %s: %v",
+                gid, err,
+            )
+        }
+    }
         totalAmount += amt
     }
+    
 
     // then delete the settled balances
     _, _ = tx.Exec(`
@@ -149,8 +168,12 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
 
     
     // look up names + email
-    _ = tx.QueryRow(`SELECT name FROM users WHERE username=$1`, me).
+    err = tx.QueryRow(`SELECT name FROM users WHERE username=$1`, me).
             Scan(&senderName)
+    if err != nil { // Check error
+        log.Printf("Error fetching sender name: %v", err)
+    }
+
     _ = tx.QueryRow(`SELECT name, email FROM users WHERE username=$1`, req.FriendName).
             Scan(&receiverName, &receiverEmail)
 
