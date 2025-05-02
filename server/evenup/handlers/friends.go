@@ -10,6 +10,8 @@ import (
     "github.com/anshikag020/EvenUp/server/evenup/config"
     "github.com/anshikag020/EvenUp/server/evenup/middleware"
 	"github.com/anshikag020/EvenUp/server/evenup/services"
+
+    "github.com/anshikag020/EvenUp/ws_server/pubsub"
 )
 
 type FriendRecord struct {
@@ -177,6 +179,11 @@ func SettleUpFriendsPage(w http.ResponseWriter, r *http.Request) {
             log.Println("mail send failed:", err)
         }
     }()
+
+    // Notify all clients to refresh the friends page
+    if WS != nil {
+        pubsub.NotifyRefresh(WS, "friends")
+    }
 
     json.NewEncoder(w).Encode(map[string]interface{}{
         "status":  true,

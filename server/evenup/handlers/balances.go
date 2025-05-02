@@ -10,6 +10,7 @@ import (
     "github.com/anshikag020/EvenUp/server/evenup/middleware"
     "fmt"
     "github.com/anshikag020/EvenUp/server/evenup/services"
+    "github.com/anshikag020/EvenUp/ws_server/pubsub"
 )
 
 type BalanceEntry struct {
@@ -319,6 +320,17 @@ func SettleBalanceHandler(w http.ResponseWriter, r *http.Request) {
         log.Println("tx commit:", err)
         http.Error(w, "Server error", http.StatusInternalServerError)
         return
+    }
+
+    if WS != nil {
+        payload, _ := json.Marshal(map[string]interface{}{
+            "type":      "balance_settled",
+            "group_id":  req.GroupID,
+            "by":        username,
+            "with":      req.Receiver,
+            "amount":    amount,
+        })
+        pubsub.NotifySettle(WS, payload)
     }
 
     // Step 9: Respond

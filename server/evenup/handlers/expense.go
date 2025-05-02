@@ -826,6 +826,16 @@ func DeleteExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 	
 	respond(w, true, "Expense deleted successfully")
+
+	if WS != nil {
+		payload, _ := json.Marshal(map[string]interface{}{
+			"type":      "expense_deleted",
+			"group_id":  groupID,
+			"by":        username,
+			"expense_id": req.ExpenseID,
+		})
+		pubsub.NotifyExpense(WS, payload)
+	}
 }
 
 // -------------------- helpers --------------------
@@ -1486,6 +1496,16 @@ func EditExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	
+	if WS != nil {
+		payload, _ := json.Marshal(map[string]interface{}{
+			"type":      "expense_edited",
+			"group_id":  groupID,
+			"by":        username,
+			"expense_id": req.ExpenseID,
+			"amount":    req.Amount,
+		})
+		pubsub.NotifyExpense(WS, payload)
+	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  true,
