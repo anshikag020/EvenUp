@@ -370,8 +370,7 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	// Success response
 	json.NewEncoder(w).Encode(AddExpenseResponse{
 		Status:  true,
-		Message: "Exp-- TODO: for all the amount values (NUMERIC) increase the number of decimal places from 2 in the end
-ense added successfully",
+		Message: "Expense added successfully",
 	})
 	responded = true
 	go func() {
