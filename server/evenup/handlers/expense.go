@@ -370,7 +370,8 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 	// Success response
 	json.NewEncoder(w).Encode(AddExpenseResponse{
 		Status:  true,
-		Message: "Expense added successfully",
+		Message: "Exp-- TODO: for all the amount values (NUMERIC) increase the number of decimal places from 2 in the end
+ense added successfully",
 	})
 	responded = true
 	go func() {
@@ -417,7 +418,7 @@ func AddExpenseHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer rows.Close()
 	
-		subject := fmt.Sprintf("New Expense in Group %s", req.GroupID)
+		subject := fmt.Sprintf("New Expense in Group %s", groupName)
 	
 		for rows.Next() {
 			var uname, fullName, email string
