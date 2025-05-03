@@ -18,7 +18,7 @@ import 'package:my_new_app/services/service%20interfaces/pinged_section_service_
 import 'package:my_new_app/services/service%20interfaces/transaction_history_service_interface.dart';
 final locator = GetIt.instance;
 // final String backendUrl = 'http://localhost:8080'; 
-final String backendUrl = 'http://172.21.130.87:8080'; 
+final String backendUrl = 'http://172.17.0.1:8080'; 
 
 void setupLocator({bool useMock = true}) {
   locator.registerLazySingleton<TransactionService>(() =>
