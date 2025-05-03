@@ -38,9 +38,10 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
   // Expense type related
   final List<String> expenseTypes = [
     "Entertainment",
-    "Outing",
     "Food",
-    "Travel",
+    "Bills",
+    "Shopping",
+    "Transport",
     "Others",
   ];
   String selectedExpenseType = "Entertainment";

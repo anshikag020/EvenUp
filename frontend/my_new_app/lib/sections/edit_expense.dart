@@ -54,9 +54,10 @@ class _EditExpenseDialogState extends State<EditExpenseDialog> {
 
   final List<String> expenseTypes = [
     "Entertainment",
-    "Outing",
     "Food",
-    "Travel",
+    "Bills",
+    "Shopping",
+    "Transport",
     "Others",
   ];
 

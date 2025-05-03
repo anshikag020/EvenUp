@@ -24,7 +24,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Map<String, String> groupIdToName = {}; // groupID -> groupName
   List<String> selectedGroupIds = []; // We will send these to the backend
 
-  final List<String> categoryOptions = ['Entertainment', 'Outing', 'Food', 'Travel', 'Others'];
+  final List<String> categoryOptions = ["Entertainment", "Food", "Bills", "Shopping", "Transport", "Others",];
   final List<String> timeOptions = [
     '1 Week',
     '1 Month',
